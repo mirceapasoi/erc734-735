@@ -22,13 +22,13 @@ The smart contract implements the following features:
 The implementation tries to make extensive use of Solidity patterns for modular code i.e. libraries, abstract contracts and multiple inheritence. Here's how the class diagram looks:
 
 ```
-                                         +------------+
-                                         |            |
-                                         | KeyArray** |
-                                         |            |
-                                         +----+-------+
-                                              |
-               +----------+ +----------+ +----v-----+
+                +--------------+         +------------+
+                |              |         |            |
+                |    ERC 165   |         | KeyArray** |
+                |              |         |            |
+                +---+--------+-+         +----+-------+
+                    |        |                |
+               +----v-----+ +v---------+ +----v-----+
                |          | |          | |          |
  +-------------+ ERC 735* | | ERC 725* | | KeyBase* |
  |             |          | |          | |          |
@@ -37,8 +37,8 @@ The implementation tries to make extensive use of Solidity patterns for modular 
  |                           | |    |       |              |              |
  |   +-----------------------+ |    | +-----+-----+  +-----v-----+ +------v-------+
  |   |                         |    | |           |  |           | |              |
- |   |                 +--------------+ Pausable  |  | KeyGetter | | Destructible |
- |   |    +---------------------------+           |  |           | |              |
+ |   |                 +-------|----|-+  Pausable |  | KeyGetter | | Destructible |
+ |   |    +--------------------|----|-+           |  |           | |              |
  |   |    |            |       |    | +--+--------+  +-+---------+ +--+-----------+
  |   |    |            |  +----+    |    |             |              |
  |   |    |            |  |         |    |             |              |
@@ -46,7 +46,7 @@ The implementation tries to make extensive use of Solidity patterns for modular 
  |   |    |            |  |         |    |             |              |
 +v---v----v---+ +------v--v---+  +--v----v--+          |              |
 |             | |             |  |          |          |              |
-| ClaimManager| | KeyManager  |  | MultiSig |          |              |
+|ClaimManager | | KeyManager  |  | MultiSig |          |              |
 |             | |             |  |          |          |              |
 +---+---------+ ++------------+  +--+-------+          |              |
     |            |                  |                  |              |
@@ -85,6 +85,7 @@ Currently missing unit tests for events being emitted.
 4. Claim IDs are generated using `keccak256(address issuer + uint256 _claimType)`, which doesn't work great for self-claims i.e. `issuer` is `address(this)` and we might want multiple self-claims with the same `claimType`
 5. Added an `ExecutionFailed` event in `ERC725` which isn't part of the standard
 6. For execution requests, I'm using the multi-sig threshold at the time of request, not the one at the time of execution - is that a good idea? (e.g. you request an execution, threshold is `X`, wait for approvals, threshold is increased to `Y`, initial execution is approval with `X` approvals)
-7. Added a `PROFILE_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text profile URL in `data` (social media, blogs, etc.). As a convention, `uri` should be equal to `data`.
-8. Added a `LABEL_CLAIM` claim type which isn't part of the standard. The intended use is to stora a plain-text label in `data` (real name, business name, nick name, brand name, alias, etc.).
-9. The "proxy contract" only supports `.call`, doesn't support `.delegateacall` or creating a new contract on behalf of the identity.
+7. Using [ERC 165](https://github.com/ethereum/EIPs/pull/881) pseudo-introspection to check if an address implements ERC 725 or 735. Is this the best pattern for that?
+8. Added a `PROFILE_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text profile URL in `data` (social media, blogs, etc.). As a convention, `uri` should be equal to `data`.
+9. Added a `LABEL_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text label in `data` (real name, business name, nick name, brand name, alias, etc.).
+10. The "proxy contract" only supports `.call`, doesn't support `.delegateacall` or creating a new contract on behalf of the identity.
