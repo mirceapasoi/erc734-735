@@ -52,7 +52,12 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
                 // Issuer signed the signature
                 return true;
             } else
-            if (issuer == address(this) || issuer.doesContractImplementInterface(ERC725ID())) {
+            if (issuer == address(this)) {
+                bool found;
+                (, found) = allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+                return found;
+            } else
+            if (issuer.doesContractImplementInterface(ERC725ID())) {
                 // Issuer is an Identity contract
                 // It should hold the key with which the above message was signed.
                 // If the key is not present anymore, the claim SHOULD be treated as invalid.
@@ -94,6 +99,46 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         _;
     }
 
+    /// @dev Add key data to the identity without checking if it already exists
+    /// @param _claimId Claim ID
+    /// @param _claimType Type of claim
+    /// @param _scheme Scheme used for the signatures
+    /// @param issuer Address of issuer
+    /// @param _signature The actual signature
+    /// @param _data The data that was signed
+    /// @param _uri The location of the claim
+    function _addClaim(
+        bytes32 _claimId,
+        uint256 _claimType,
+        uint256 _scheme,
+        address issuer,
+        bytes _signature,
+        bytes _data,
+        string _uri
+    )
+        internal
+    {
+        // New claim
+        claims[_claimId] = Claim(_claimType, _scheme, issuer, _signature, _data, _uri);
+        claimsByType[_claimType].push(_claimId);
+        numClaims++;
+        emit ClaimAdded(_claimId, _claimType, _scheme, issuer, _signature, _data, _uri);
+    }
+
+    /// @dev Update the URI of an existing claim without any checks
+    /// @param _claimType Type of claim
+    /// @param issuer Address of issuer
+    /// @param _uri The location of the claim
+    function _updateClaimUri(
+        uint256 _claimType,
+        address issuer,
+        string _uri
+    )
+    internal
+    {
+        claims[getClaimId(issuer, _claimType)].uri = _uri;
+    }
+
     /// @dev Requests the ADDITION or the CHANGE of a claim from an issuer.
     ///  Claims can requested to be added by anybody, including the claim holder itself (self issued).
     /// @param _claimType Type of claim
@@ -129,11 +174,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
 
         bytes32 claimId = getClaimId(issuer, _claimType);
         if (claims[claimId].issuer == address(0)) {
-            // New claim
-            claims[claimId] = Claim(_claimType, _scheme, issuer, _signature, _data, _uri);
-            claimsByType[_claimType].push(claimId);
-            numClaims++;
-            emit ClaimAdded(claimId, _claimType, _scheme, issuer, _signature, _data, _uri);
+            _addClaim(claimId, _claimType, _scheme, issuer, _signature, _data, _uri);
         } else {
             // Existing claim
             Claim storage c = claims[claimId];

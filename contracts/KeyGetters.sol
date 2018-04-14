@@ -23,10 +23,9 @@ contract KeyGetters is KeyBase {
         bool found;
         (index, found) = allKeys.find(_key, _purpose);
         if (found) {
-            KeyArray.Key storage k = allKeys[index];
-            purpose = k.purpose;
-            keyType = k.keyType;
-            key = k.key;
+            purpose = _purpose;
+            keyType = allKeys[index].keyType;
+            key = _key;
         }
     }
 

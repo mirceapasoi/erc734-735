@@ -31,7 +31,7 @@ export const printTotalGas = () => {
 
 export const printTestGas = () => {
     totalGas += gasUsed;
-    console.log(`Test: ${getAndClearGas().toLocaleString()} gas`);
+    console.log(`\tTest: ${getAndClearGas().toLocaleString()} gas`);
 }
 
 // Measure gas
@@ -45,4 +45,10 @@ export const assertOkTx = async promise => {
     gasUsed += r.receipt.gasUsed;
     assert.isOk(r);
     return r;
+}
+
+export const assertBlockGasLimit = (atLeast) => {
+    let block = web3.eth.getBlock("latest");
+    let limit = block.gasLimit;
+    assert.isAtLeast(limit, atLeast);
 }

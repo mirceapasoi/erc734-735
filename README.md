@@ -67,6 +67,8 @@ The implementation tries to make extensive use of Solidity patterns for modular 
 Truffle tests exists for each contract, in separate files in the `test/` folder. Each tests tries to count how much gas it's using for setup and during the test. Also, at the end I'm printing out
 total gas used for all tests.
 ```
+$ ganache-cli -l 10000000
+...
 $ truffle test
 ...
 Setup: 5,825,603 gas (4/6 keys, 0 claims)

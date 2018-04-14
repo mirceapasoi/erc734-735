@@ -1,6 +1,6 @@
 const Identity = artifacts.require("Identity");
 import colors from 'colors';
-import { assertOkTx, getAndClearGas, measureTx, contractAddress } from './util';
+import { assertOkTx, getAndClearGas, measureTx, contractAddress, assertBlockGasLimit } from './util';
 
 // Constants
 export const Purpose = {
@@ -34,13 +34,16 @@ export const assertKeyCount = async (identity, purpose, count) => {
 };
 
 // Setup test environment
-export const setupTest = async (accounts, init, total, claims = [], managementThreshold = 1, actionThreshold = 1) => {
+export const setupTest = async (accounts, init, total, claims = [], managementThreshold = 1, actionThreshold = 1, blockGasLimit = 10000000) => {
     let totalSum = total.reduce((a, b) => a + b);
     let initSum = init.reduce((a, b) => a + b);
     let addr = {}, keys = {};
 
     // Check we have enough accounts
     assert(initSum <= totalSum && totalSum + 1 <= accounts.length, "Not enough accounts");
+
+    // Check block gas limit is appropriate
+    assertBlockGasLimit(blockGasLimit);
 
     // Use deployed identity for other identity
     let otherIdentity = await Identity.deployed();
@@ -82,6 +85,13 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
     if (claims.length > 0) {
         // Must have at least one claim address if making claim
         assert(addr.claim.length > 0);
+        // First, sort claims by issuer, claimType
+        claims.sort((c1, c2) => {
+            if (c1.self == c2.self) return c1.type - c2.type;
+            let a1 = c1.self ? willDeployAt : otherIdentity.address;
+            let a2 = c2.self ? willDeployAt : otherIdentity.address;
+            return a1.localeCompare(a2);
+        });
         for (const { type, data, self } of claims) {
             // Claim hash
             let toSign = await otherIdentity.claimToSign(willDeployAt, type, data);
@@ -94,24 +104,30 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
 
     // Deploy identity
     let identity = await Identity.new(
+        // Keys
         initKeys,
         initPurposes,
-        Array(initSum).fill(KeyType.ECDSA),
+        // Thresholds
         managementThreshold,
         actionThreshold,
-        {from: addr.manager[0]}
+        // Claims
+        claims.map(c => c.self ? willDeployAt : otherIdentity.address),
+        claims.map(c => c.type),
+        // strip 0x prefix from each signature
+        "0x" + signatures.map(s => s.slice(2)).join(''),
+        // N bytes are encoded as a 2N+2 hex string (0x prefix, plus 2 characters per byte)
+        signatures.map(s => (s.length - 2) / 2),
+        claims.map(c => c.data).join(''),
+        claims.map(c => c.data.length),
+        claims.map(c => c.uri).join(''),
+        claims.map(c => c.uri.length),
+        // Use max gas for deploys
+        {from: addr.manager[0], gas: blockGasLimit}
     );
     // Make sure it matches address used for signatures
     assert.equal(identity.address, willDeployAt);
     // Measure gas usage
     await measureTx(identity.transactionHash);
-
-    // Add self-laims one by one, until ABIEncoderV2 works and we can send them through the constructor
-    for (let i = 0; i < claims.length; i++) {
-        const { type, data, uri, self } = claims[i];
-        let issuer = self ? identity.address : otherIdentity.address;
-        await assertOkTx(identity.addClaim(type, Scheme.ECDSA, issuer, signatures[i], data, uri, {from: addr.manager[0]}));
-    }
 
     // Check init keys
     let contractKeys = await identity.numKeys();
@@ -120,7 +136,7 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
     let contractClaims = await identity.numClaims();
     contractClaims.should.be.bignumber.equal(claims.length);
 
-    console.debug(`Setup: ${getAndClearGas().toLocaleString()} gas (${initSum}/${totalSum} keys, ${contractClaims} claims)`.grey);
+    console.debug(`\tSetup: ${getAndClearGas().toLocaleString()} gas (${initSum}/${totalSum} keys, ${contractClaims} claims)`.grey);
 
     return {
         identity,

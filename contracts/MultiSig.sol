@@ -62,7 +62,7 @@ contract MultiSig is Pausable, ERC725 {
         bytes _data,
         uint _nonce
     )
-        internal
+        private
         pure
         returns (uint256)
     {
@@ -136,7 +136,7 @@ contract MultiSig is Pausable, ERC725 {
         Execution e,
         bool clean
     )
-        internal
+        private
         returns (bool)
     {
         // Must exist

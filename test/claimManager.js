@@ -40,8 +40,8 @@ contract("ClaimManager", async (accounts) => {
     beforeEach("new contract", async () => {
         ({ identity, addr, keys, otherIdentity } = await setupTest(
             accounts,
+            [2, 2, 1, 0],
             [3, 3, 1, 0],
-            [4, 4, 1, 0],
             [
                 {type: ClaimType.LABEL, data: 'Mircea Pasoi', uri: 'http://mirceapasoi.com', self: true},
                 {type: ClaimType.LABEL, data: 'Mircea Bogdan Pasoi', uri: '', self: false},
