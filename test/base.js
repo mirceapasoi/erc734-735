@@ -102,6 +102,10 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
         }
     }
 
+    // N bytes are encoded as a 2N+2 hex string (0x prefix, plus 2 characters per byte)
+    let sizes = claims.map((c, i) => [(signatures[i].length - 2) / 2, c.data.length, c.uri.length]);
+    sizes = [].concat(...sizes);
+
     // Deploy identity
     let identity = await Identity.new(
         // Keys
@@ -115,12 +119,9 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
         claims.map(c => c.type),
         // strip 0x prefix from each signature
         "0x" + signatures.map(s => s.slice(2)).join(''),
-        // N bytes are encoded as a 2N+2 hex string (0x prefix, plus 2 characters per byte)
-        signatures.map(s => (s.length - 2) / 2),
         claims.map(c => c.data).join(''),
-        claims.map(c => c.data.length),
         claims.map(c => c.uri).join(''),
-        claims.map(c => c.uri.length),
+        sizes,
         // Use max gas for deploys
         {from: addr.manager[0], gas: blockGasLimit}
     );

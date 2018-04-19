@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 import "./Destructible.sol";
 import "./ERC735.sol";
@@ -24,12 +24,10 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _actionThreshold Multi-sig threshold for ACTION_KEY
     /// @param _claimTypes Claim types (in the same order as _issuers)
     /// @param _signatures All the initial claim signatures concatenated in one bytes array
-    /// @param _signatureSizes Signature sizes (each must be ≤ 256)
     /// @param _datas All the initial claim data concatenated in one bytes array
-    /// @param _dataSizes Claim data sizes (each must be ≤ 256)
     /// @param _uris All the initial claim URIs concatenated in one string
-    /// @param _uriSizes URI sizes (each must be ≤ 256)
-    function Identity(
+    /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
+    constructor(
         bytes32[] _keys,
         uint256[] _purposes,
         uint256 _managementThreshold,
@@ -38,21 +36,17 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
         uint256[] _claimTypes,
         // TODO: Pass bytes[] signatures, bytes[] data and string[] uris once ABIEncoderV2 is out
         bytes _signatures,
-        uint8[] _signatureSizes,
         bytes _datas,
-        uint8[] _dataSizes,
         string _uris,
-        uint8[] _uriSizes
+        uint8[] _sizes
     )
         public
     {
         _validateKeys(_keys, _purposes);
-        _validateClaims(_issuers, _claimTypes, _signatureSizes, _dataSizes, _uriSizes);
+        _validateClaims(_issuers, _claimTypes, _sizes);
 
         _addKeys(_keys, _purposes, _managementThreshold, _actionThreshold);
-        // TODO: we split adding claims in two to prevent "Stack too deep" error
-        _addClaims(_issuers, _claimTypes, _signatures, _signatureSizes, _datas, _dataSizes);
-        _addUris(_issuers, _claimTypes, _uris, _uriSizes);
+        _addClaims(_issuers, _claimTypes, _signatures, _datas, _uris, _sizes);
 
         // Supports both ERC 725 & 735
         supportedInterfaces[ERC725ID() ^ ERC735ID()] = true;
@@ -128,24 +122,20 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @dev Validate claims are sorted and unique
     /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, claim types must be ascending
     /// @param _claimTypes Claim types (in the same order as _issuers)
-    /// @param _signatureSizes Signature sizes (each must be ≤ 256)
-    /// @param _dataSizes Claim data sizes (each must be ≤ 256)
-    /// @param _uriSizes URI sizes (each must be ≤ 256)
+    /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
     function _validateClaims
     (
         address[] _issuers,
         uint256[] _claimTypes,
-        uint8[] _signatureSizes,
-        uint8[] _dataSizes,
-        uint8[] _uriSizes
+        uint8[] _sizes
     )
     private
     pure
     {
         // Validate claims are sorted and unique
-        require(_signatureSizes.length == _dataSizes.length);
-        require(_dataSizes.length == _uriSizes.length);
-        for (uint i = 1; i < _signatureSizes.length; i++) {
+        require(_issuers.length == _claimTypes.length);
+        require(3 * _claimTypes.length == _sizes.length);
+        for (uint i = 1; i < _issuers.length; i++) {
             // Expect input to be in sorted order, first by issuer, then by claimType
             // Sorted order guarantees (issuer, claimType) pairs are unique
             address prevIssuer = _issuers[i - 1];
@@ -157,29 +147,28 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, claim types must be ascending
     /// @param _claimTypes Claim types (in the same order as _issuers)
     /// @param _signatures All the initial claim signatures concatenated in one bytes array
-    /// @param _signatureSizes Signature sizes (each must be ≤ 256)
     /// @param _datas All the initial claim data concatenated in one bytes array
-    /// @param _dataSizes Claim data sizes (each must be ≤ 256)
+    /// @param _uris All the initial claim URIs concatenated in one string
+    /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
     function _addClaims
     (
         address[] _issuers,
         uint256[] _claimTypes,
         bytes _signatures,
-        uint8[] _signatureSizes,
         bytes _datas,
-        uint8[] _dataSizes
+        string _uris,
+        uint8[] _sizes
     )
     private
     {
         // Add constructor claims
-        uint sigOffset = 0;
-        uint dataOffset = 0;
+        uint[3] memory offset;
         bytes memory signature;
         bytes memory data;
-        for (uint i = 0; i < _signatureSizes.length; i++) {
+        for (uint i = 0; i < _issuers.length; i++) {
             // Check signature
-            signature = _signatures.slice(sigOffset, _signatureSizes[i]);
-            data = _datas.slice(dataOffset, _dataSizes[i]);
+            signature = _signatures.slice(offset[0], _sizes[3 * i]);
+            data = _datas.slice(offset[1], _sizes[3 * i + 1]);
             require(_validSignature(_claimTypes[i], ECDSA_SCHEME, _issuers[i], signature, data));
             // Add claim
             _addClaim(
@@ -189,32 +178,11 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
                 _issuers[i],
                 signature,
                 data,
-                ""
+                _uris.slice(offset[2], _sizes[3 * i + 2])
             );
-            sigOffset += _signatureSizes[i];
-            dataOffset += _dataSizes[i];
-        }
-    }
-
-    /// @dev Add URI to already existing claims
-    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, claim types must be ascending
-    /// @param _claimTypes Claim types (in the same order as _issuers)
-    /// @param _uris All the initial claim URIs concatenated in one string
-    /// @param _uriSizes URI sizes (each must be ≤ 256)
-    function _addUris
-    (
-        address[] _issuers,
-        uint256[] _claimTypes,
-        string _uris,
-        uint8[] _uriSizes
-    )
-    private
-    {
-        // Add constructor claims
-        uint uriOffset = 0;
-        for (uint i = 0; i < _uriSizes.length; i++) {
-            _updateClaimUri(_claimTypes[i], _issuers[i], _uris.slice(uriOffset, _uriSizes[i]));
-            uriOffset += _uriSizes[i];
+            offset[0] += _sizes[3 * i];
+            offset[1] += _sizes[3 * i + 1];
+            offset[2] += _sizes[3 * i + 2];
         }
     }
 

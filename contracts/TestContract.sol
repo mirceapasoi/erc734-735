@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 import "./ERC165Query.sol";
 import "./ERC735.sol";
@@ -11,12 +11,12 @@ contract TestContract {
     using ERC165Query for address;
 
     // Events
-    event IdentityCalled(bytes32 data);
+    event IdentityCalled(bytes data);
 
     // Counts calls by msg.sender
     mapping (address => uint) public numCalls;
 
-    function TestContract() public {
+    constructor() public {
     }
 
     /// @dev Increments the number of calls from sender
@@ -31,11 +31,10 @@ contract TestContract {
         require(msg.sender.doesContractImplementInterface(0x10765379));
         // Get first LABEL claim
         ERC735 id = ERC735(msg.sender);
-        // TODO: Wait until Solidity 0.4.22 is out to call getClaimIdsByType and getClaim
-        // https://github.com/ethereum/solidity/issues/3270
-        bytes32 data;
         // 5 is LABEL_CLAIM
-        (, , , , data, ) = id.getClaimByTypeAndIndex(5, 0);
+        bytes32[] memory claimIds = id.getClaimIdsByType(5);
+        bytes memory data;
+        (, , , , data, ) = id.getClaim(claimIds[0]);
         emit IdentityCalled(data);
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 /// @title ERC165
 /// @author Mircea Pasoi
@@ -15,7 +15,7 @@ contract ERC165 {
     }
 
     /// @dev Constructor that adds ERC165 as a supported interface
-    function ERC165() internal {
+    constructor() internal {
         supportedInterfaces[ERC165ID()] = true;
     }
 

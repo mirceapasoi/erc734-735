@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 import "./ERC165.sol";
 
@@ -16,7 +16,7 @@ contract ERC735 is ERC165 {
     }
 
     /// @dev Constructor that adds ERC735 as a supported interface
-    function ERC735() internal {
+    constructor() internal {
         supportedInterfaces[ERC735ID()] = true;
     }
 
@@ -45,6 +45,4 @@ contract ERC735 is ERC165 {
     function getClaimIdsByType(uint256 _claimType) public view returns(bytes32[] claimIds);
     function addClaim(uint256 _claimType, uint256 _scheme, address issuer, bytes _signature, bytes _data, string _uri) public returns (uint256 claimRequestId);
     function removeClaim(bytes32 _claimId) public returns (bool success);
-    // TODO: Not part of the standard
-    function getClaimByTypeAndIndex(uint256 _claimType, uint256 _index) public view returns(uint256 claimType, uint256 scheme, address issuer, bytes32 signature, bytes32 data, bytes32 uri);
 }

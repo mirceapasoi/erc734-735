@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 /// @title ERC165
 /// @author @fulldecent and @jbaylina

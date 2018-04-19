@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 import "./ERC165.sol";
 
@@ -16,7 +16,7 @@ contract ERC725 is ERC165 {
     }
 
     /// @dev Constructor that adds ERC725 as a supported interface
-    function ERC725() internal {
+    constructor() internal {
         supportedInterfaces[ERC725ID()] = true;
     }
 

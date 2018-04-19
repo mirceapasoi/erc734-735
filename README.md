@@ -81,13 +81,12 @@ Total: 5,215,118 gas
 Currently missing unit tests for events being emitted.
 
 ## Open issues
-1. Can't use `getClaim` and `getClaimIdsByType` in smart contracts until Solidity 0.4.22 is out because they use variable length types `bytes`  and `string` (details here https://github.com/ethereum/solidity/issues/3270). As a temporary measure, I've added a `getClaimByTypeAndIndex(_claimId, _index)` that bypasses the issues and coerces variable length types into `bytes32`.
-2. Can't pass an initial set of claims on contract deploy, seems like `ABIEncodeV2` is needed to have `bytes[] signatures, bytes[] data, string[] uris` in the constructor.
-3. `uri` is not included in the signature and could theoretically be changed without changing a claim signature. Is this intentional or not?
-4. Claim IDs are generated using `keccak256(address issuer + uint256 _claimType)`, which doesn't work great for self-claims i.e. `issuer` is `address(this)` and we might want multiple self-claims with the same `claimType`
-5. Added an `ExecutionFailed` event in `ERC725` which isn't part of the standard
-6. For execution requests, I'm using the multi-sig threshold at the time of request, not the one at the time of execution - is that a good idea? (e.g. you request an execution, threshold is `X`, wait for approvals, threshold is increased to `Y`, initial execution is approval with `X` approvals)
-7. Using [ERC 165](https://github.com/ethereum/EIPs/pull/881) pseudo-introspection to check if an address implements ERC 725 or 735. Is this the best pattern for that?
-8. Added a `PROFILE_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text profile URL in `data` (social media, blogs, etc.). As a convention, `uri` should be equal to `data`.
-9. Added a `LABEL_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text label in `data` (real name, business name, nick name, brand name, alias, etc.).
-10. The "proxy contract" only supports `.call`, doesn't support `.delegateacall` or creating a new contract on behalf of the identity.
+1. Can't pass an initial set of claims on contract deploy, seems like `ABIEncodeV2` is needed to have `bytes[] signatures, bytes[] data, string[] uris` in the constructor.
+1. `uri` is not included in the signature and could theoretically be changed without changing a claim signature. Is this intentional or not?
+1. Claim IDs are generated using `keccak256(address issuer + uint256 _claimType)`, which doesn't work great for self-claims i.e. `issuer` is `address(this)` and we might want multiple self-claims with the same `claimType`
+1. Added an `ExecutionFailed` event in `ERC725` which isn't part of the standard
+1. For execution requests, I'm using the multi-sig threshold at the time of request, not the one at the time of execution - is that a good idea? (e.g. you request an execution, threshold is `X`, wait for approvals, threshold is increased to `Y`, initial execution is approval with `X` approvals)
+1. Using [ERC 165](https://github.com/ethereum/EIPs/pull/881) pseudo-introspection to check if an address implements ERC 725 or 735. Is this the best pattern for that?
+1. Added a `PROFILE_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text profile URL in `data` (social media, blogs, etc.). As a convention, `uri` should be equal to `data`.
+1. Added a `LABEL_CLAIM` claim type which isn't part of the standard. The intended use is to store a plain-text label in `data` (real name, business name, nick name, brand name, alias, etc.).
+1. The "proxy contract" only supports `.call`, doesn't support `.delegateacall` or creating a new contract on behalf of the identity.

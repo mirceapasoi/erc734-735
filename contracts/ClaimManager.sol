@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.22;
 
 import "../node_modules/zeppelin-solidity/contracts/ECRecovery.sol";
 import "./Pausable.sol";
@@ -252,37 +252,6 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         returns(bytes32[] claimIds)
     {
         claimIds = claimsByType[_claimType];
-    }
-
-    /// @dev Return a claim by type and index in array of claims. Hack until newer version of
-    ///  Solidity is out
-    /// @return (claimType, scheme, issuer, signature, data, uri) tuple with claim data, with
-    ///  bytes and string types coerced into bytes32
-    function getClaimByTypeAndIndex(uint256 _claimType, uint256 _index)
-        public
-        view
-        returns (
-        uint256 claimType,
-        uint256 scheme,
-        address issuer,
-        bytes32 signature,
-        bytes32 data,
-        bytes32 uri
-        )
-    {
-        // TODO: Get rid of this when Solidity 0.4.22 is out
-        // https://github.com/ethereum/solidity/issues/3270
-        bytes32 claimId = claimsByType[_claimType][_index];
-        bytes memory _signature;
-        bytes memory _data;
-        string memory _uri;
-        (claimType, scheme, issuer, _signature, _data, _uri) = getClaim(claimId);
-        // https://ethereum.stackexchange.com/questions/9142/how-to-convert-a-string-to-bytes32
-        assembly {
-            signature := mload(add(_signature, 32))
-            data := mload(add(_data, 32))
-            uri := mload(add(_uri, 32))
-        }
     }
 
     /// @dev Refresh a given claim. If no longer valid, it will remove it
