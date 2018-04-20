@@ -4,7 +4,7 @@
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "ganache-cli": "^6.1.0",
-    "truffle": "^4.1.6",
+    "truffle": "^4.1.7",
     "zeppelin-solidity": "^1.8.0"
   },
   "devDependencies": {

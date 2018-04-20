@@ -1,4 +1,4 @@
-pragma solidity ^0.4.22;
+pragma solidity ^0.4.23;
 
 import "../node_modules/zeppelin-solidity/contracts/ECRecovery.sol";
 import "./Pausable.sol";
