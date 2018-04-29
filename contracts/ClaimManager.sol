@@ -9,7 +9,7 @@ import "./ERC165Query.sol";
 /// @title ClaimManager
 /// @author Mircea Pasoi
 /// @notice Implement functions from ERC735 spec
-/// @dev Key data is stored in an array using KeyArray library. Inheriting ERC725 for the getters
+/// @dev  Key data is stored using KeyStore library. Inheriting ERC725 for the getters
 contract ClaimManager is Pausable, ERC725, ERC735 {
     using ECRecovery for bytes32;
     using ERC165Query for address;
@@ -53,17 +53,13 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
                 return true;
             } else
             if (issuer == address(this)) {
-                bool found;
-                (, found) = allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
-                return found;
+                return allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
             } else
             if (issuer.doesContractImplementInterface(ERC725ID())) {
                 // Issuer is an Identity contract
                 // It should hold the key with which the above message was signed.
                 // If the key is not present anymore, the claim SHOULD be treated as invalid.
-                uint256 purpose;
-                (purpose, , ) = ERC725(issuer).getKey(addrToKey(signedBy), CLAIM_SIGNER_KEY);
-                return (purpose == CLAIM_SIGNER_KEY);
+                return ERC725(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
             }
             // Invalid
             return false;
@@ -80,22 +76,17 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         // Must exist
         require(issuer != 0);
 
-        bool valid = false;
+        // Can perform action on claim
         if (_managementOrSelf()) {
-            valid = true;
+            // Valid
         } else
         if (msg.sender == issuer) {
             // MUST only be done by the issuer of the claim
-            valid = true;
         } else
         if (issuer.doesContractImplementInterface(ERC725ID())) {
             // Issuer is another Identity contract, is this an action key?
-            uint256 purpose;
-            (purpose, , ) = ERC725(issuer).getKey(addrToKey(msg.sender), ACTION_KEY);
-            valid = (purpose == ACTION_KEY);
+            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY));
         }
-        // Can perform action on claim
-        require(valid);
         _;
     }
 
@@ -301,7 +292,6 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         pure
         returns (bytes32)
     {
-        // TODO: Why is "uri" not included in signature?
         return keccak256(subject, claimType, data);
     }
 

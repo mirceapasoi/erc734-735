@@ -6,7 +6,7 @@ import "./ERC725.sol";
 /// @title MultiSig
 /// @author Mircea Pasoi
 /// @notice Implement execute and multi-sig functions from ERC725 spec
-/// @dev Key data is stored in an array using KeyArray library. Inheriting ERC725 for the getters
+/// @dev Key data is stored using KeyStore library. Inheriting ERC725 for the getters
 contract MultiSig is Pausable, ERC725 {
     // To prevent replay attacks
     uint256 nonce = 1;
@@ -82,32 +82,28 @@ contract MultiSig is Pausable, ERC725 {
         whenNotPaused
         returns (uint256 executionId)
     {
-        bool found;
         // TODO: Using threshold at time of execution
         uint threshold;
         if (_to == address(this)) {
             if (msg.sender == address(this)) {
                 // Contract calling itself to act on itself
-                found = true;
                 threshold = managementThreshold;
             } else {
                 // Only management keys can operate on this contract
-                (, found) = allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY);
+                require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY));
                 threshold = managementThreshold - 1;
             }
         } else {
             require(_to != address(0));
             if (msg.sender == address(this)) {
                 // Contract calling itself to act on other address
-                found = true;
                 threshold = actionThreshold;
             } else {
                 // Action keys can operate on other addresses
-                (, found) = allKeys.find(addrToKey(msg.sender), ACTION_KEY);
+                require(allKeys.find(addrToKey(msg.sender), ACTION_KEY));
                 threshold = actionThreshold - 1;
             }
         }
-        require(found);
 
         // Generate id and increment nonce
         executionId = getExecutionId(address(this), _to, _value, _data, nonce);
@@ -178,13 +174,11 @@ contract MultiSig is Pausable, ERC725 {
         require(e.to != 0);
 
         // Must be approved with the right key
-        bool found;
         if (e.to == address(this)) {
-            (, found) = allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY);
+            require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY));
         } else {
-            (, found) = allKeys.find(addrToKey(msg.sender), ACTION_KEY);
+            require(allKeys.find(addrToKey(msg.sender), ACTION_KEY));
         }
-        require(found);
 
         emit Approved(_id, _approve);
 

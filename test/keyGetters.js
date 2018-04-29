@@ -12,49 +12,42 @@ contract("KeyGetters", async (accounts) => {
         ({ identity, addr, keys } = await setupTest(accounts, [2, 2, 0, 0], [3, 3, 1, 1]));
     })
 
-    let assertGetKey = async (key, purpose, keyType) => {
-        let keyData = await identity.getKey(key, purpose);
-        if (keyType) {
-            keyData[0].should.be.bignumber.equal(purpose);
-            keyData[1].should.be.bignumber.equal(keyType);
-            assert.equal(keyData[2], key);
-        } else {
-            keyData[0].should.be.bignumber.equal(0);
-            keyData[1].should.be.bignumber.equal(0);
-            assert.equal(keyData[2], 0);
-        }
-    }
-
     // Getters
-    describe("getKey", async () => {
+    describe("keyHasPurpose", async () => {
         it("should return keys that exist", async () => {
-            await assertGetKey(keys.manager[1], Purpose.MANAGEMENT, KeyType.ECDSA);
-            await assertGetKey(keys.action[0], Purpose.ACTION, KeyType.ECDSA);
+            assert.isTrue(await identity.keyHasPurpose(keys.manager[1], Purpose.MANAGEMENT));
+            assert.isTrue(await identity.keyHasPurpose(keys.action[0], Purpose.ACTION));
         });
 
         it("should not return keys that don't exist", async () => {
-            await assertGetKey(keys.manager[0], Purpose.ACTION, 0);
-            await assertGetKey(keys.action[1], Purpose.MANAGEMENT, 0);
+            assert.isFalse(await identity.keyHasPurpose(keys.manager[0], Purpose.ACTION));
+            assert.isFalse(await identity.keyHasPurpose(keys.action[1], Purpose.MANAGEMENT));
         });
     });
 
-    describe("getKeyPurpose", async () => {
-        it("should return keys by purpose", async () => {
-            let purposes = await identity.getKeyPurpose(keys.manager[0]);
+    describe("getKey", async () => {
+        it("should return key data", async () => {
+            let [purposes, keyType, key] = await identity.getKey(keys.manager[0]);
+            keyType.should.be.bignumber.equal(KeyType.ECDSA);
+            key.should.be.bignumber.equal(keys.manager[0]);
             assert.equal(purposes.length, 1);
             purposes[0].should.be.bignumber.equal(Purpose.MANAGEMENT);
         });
 
-        it("should return multiple keys by purpose", async () => {
+        it("should return multiple purposes", async () => {
             await assertOkTx(identity.addKey(keys.action[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
-            let purposes = await identity.getKeyPurpose(keys.action[0]);
+            let [purposes, keyType, key] = await identity.getKey(keys.action[0]);
+            keyType.should.be.bignumber.equal(KeyType.ECDSA);
+            key.should.be.bignumber.equal(keys.action[0]);
             assert.equal(purposes.length, 2);
             purposes[0].should.be.bignumber.equal(Purpose.ACTION);
             purposes[1].should.be.bignumber.equal(Purpose.MANAGEMENT);
         });
 
         it("should not return keys without purpose", async () => {
-            let purposes = await identity.getKeyPurpose(keys.claim[0]);
+            let [purposes, keyType, key] = await identity.getKey(keys.claim[0]);
+            keyType.should.be.bignumber.equal(0);
+            key.should.be.bignumber.equal(0);
             assert.equal(purposes.length, 0);
         });
     });

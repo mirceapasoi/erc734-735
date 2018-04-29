@@ -56,9 +56,7 @@ contract("Identity", async (accounts) => {
         let signedBy = await identity.getSignatureAddress(challenge, signature);
         let signedByKey = await identity.addrToKey(signedBy);
         // Check if this is an action key in the identity you claim
-        const [purpose, , key] = await identity.getKey(signedByKey, Purpose.ACTION);
-        purpose.should.be.bignumber.equal(Purpose.ACTION);
-        assert.equal(key, signedByKey);
+        assert.isTrue(await identity.keyHasPurpose(signedByKey, Purpose.ACTION));
         // I now believe you are identity.address so I'll search for a label
         let labels = await identity.getClaimIdsByType(ClaimType.LABEL);
         assert.isAbove(labels.length, 0);

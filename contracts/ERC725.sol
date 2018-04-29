@@ -10,7 +10,7 @@ contract ERC725 is ERC165 {
     /// @return ID for ERC725 interface
     function ERC725ID() public pure returns (bytes4) {
         return (
-            this.getKey.selector ^ this.getKeyPurpose.selector ^ this.getKeysByPurpose.selector ^
+            this.getKey.selector ^ this.keyHasPurpose.selector ^ this.getKeysByPurpose.selector ^
             this.addKey.selector ^ this.execute.selector ^ this.approve.selector ^ this.removeKey.selector
         );
     }
@@ -45,8 +45,8 @@ contract ERC725 is ERC165 {
     event ExecutionFailed(uint256 indexed executionId, address indexed to, uint256 indexed value, bytes data);
 
     // Functions
-    function getKey(bytes32 _key, uint256 _purpose) public view returns(uint256 purpose, uint256 keyType, bytes32 key);
-    function getKeyPurpose(bytes32 _key) public view returns(uint256[] purpose);
+    function getKey(bytes32 _key) public view returns(uint256[] purposes, uint256 keyType, bytes32 key);
+    function keyHasPurpose(bytes32 _key, uint256 purpose) public view returns(bool exists);
     function getKeysByPurpose(uint256 _purpose) public view returns(bytes32[] keys);
     function addKey(bytes32 _key, uint256 _purpose, uint256 _keyType) public returns (bool success);
     function execute(address _to, uint256 _value, bytes _data) public returns (uint256 executionId);

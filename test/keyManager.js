@@ -40,9 +40,57 @@ contract("KeyManager", async (accounts) => {
             let total = await identity.numKeys();
             total.should.be.bignumber.equal(4);
         });
+
+        it("should add multi-purpose keys", async () => {
+            // Start with 2
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
+            await assertKeyCount(identity, Purpose.ACTION, 2);
+
+            await assertOkTx(identity.addKey(keys.action[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
+            await assertOkTx(identity.addKey(keys.manager[0], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[0]}));
+
+            // End with 2
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
+            await assertKeyCount(identity, Purpose.ACTION, 3);
+
+            let total = await identity.numKeys();
+            total.should.be.bignumber.equal(6);
+        });
     });
 
     describe("removeKey", async () => {
+        it("should remove multi-purpose keys", async () => {
+            // Start with 2
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
+            await assertKeyCount(identity, Purpose.ACTION, 2);
+
+            // Add ACTION as MANAGEMENT
+            await assertOkTx(identity.addKey(keys.action[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
+
+            // Remove MANAGEMENT
+            await assertOkTx(identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.manager[0]}));
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
+
+            // Remove MANAGEMENT
+            await assertOkTx(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.manager[0]}));
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 1);
+
+            // Remove ACTION
+            await assertOkTx(identity.removeKey(keys.action[0], Purpose.ACTION, {from: addr.action[0]}));
+            await assertKeyCount(identity, Purpose.ACTION, 1);
+
+            // Remove ACTION as MANAGEMENT
+            await assertOkTx(identity.removeKey(keys.action[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
+            await assertKeyCount(identity, Purpose.MANAGEMENT, 0);
+
+            // Storage is clean
+            let [purposes, keyType, key] = await identity.getKey(keys.action[0]);
+            keyType.should.be.bignumber.equal(0);
+            key.should.be.bignumber.equal(0);
+            assert.equal(purposes.length, 0);
+        });
+
         it("should remove existing key", async () => {
             // Start with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);

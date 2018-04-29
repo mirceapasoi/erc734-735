@@ -55,11 +55,11 @@ contract("ClaimManager", async (accounts) => {
             assert.isFalse(await identity.supportsInterface("0xffffffff"));
             assert.isTrue(await identity.supportsInterface("0x01ffc9a7"));
             // ERC725
-            assert.isTrue(await identity.supportsInterface("0x0c42c283"));
+            assert.isTrue(await identity.supportsInterface("0xdc3d2a7b"));
             // ERC735
             assert.isTrue(await identity.supportsInterface("0x10765379"));
             // ERC725 + ERC735
-            assert.isTrue(await identity.supportsInterface("0x1c3491fa"));
+            assert.isTrue(await identity.supportsInterface("0xcc4b7902"));
         });
     })
 

@@ -24,7 +24,7 @@ The implementation tries to make extensive use of Solidity patterns for modular 
 ```
                 +--------------+         +------------+
                 |              |         |            |
-                |    ERC 165   |         | KeyArray** |
+                |    ERC 165   |         | KeyStore** |
                 |              |         |            |
                 +---+--------+-+         +----+-------+
                     |        |                |

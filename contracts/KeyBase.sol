@@ -1,11 +1,11 @@
 pragma solidity ^0.4.23;
 
-import "./KeyArray.sol";
+import "./KeyStore.sol";
 
 /// @title KeyBase
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC725 implementation
-/// @dev Key data is stored in an array using KeyArray library
+/// @dev Key data is stored using KeyStore library
 contract KeyBase {
     uint256 constant MANAGEMENT_KEY = 1;
 
@@ -13,9 +13,9 @@ contract KeyBase {
     uint256 public managementThreshold = 1;
     uint256 public actionThreshold = 1;
 
-    // Store keys in an array
-    using KeyArray for KeyArray.Key[];
-    KeyArray.Key[] allKeys;
+    // Key storage
+    using KeyStore for KeyStore.Keys;
+    KeyStore.Keys allKeys;
 
     /// @dev Checks if sender is either the identity contract or a MANAGEMENT_KEY
     /// @dev If the multi-sig threshold for MANAGEMENT_KEY if >1, it will throw an error
@@ -31,7 +31,7 @@ contract KeyBase {
         }
         // Only works with 1 key threshold, otherwise need multi-sig
         require(managementThreshold == 1);
-        (, found) = allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY);
+        return allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY);
     }
 
     /// @dev Modifier that only allows keys of purpose 1, or the identity itself
@@ -47,7 +47,7 @@ contract KeyBase {
         view
         returns (uint)
     {
-        return allKeys.length;
+        return allKeys.numKeys;
     }
 
     /// @dev Convert an Ethereum address (20 bytes) to an ERC725 key (32 bytes)
