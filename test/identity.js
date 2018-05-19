@@ -1,6 +1,6 @@
 import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
 import { setupTest, Purpose, KeyType, Topic } from './base';
-import { assertOkTx, printTestGas, printTotalGas } from './util';
+import { assertOkTx, printTestGas } from './util';
 
 const TestContract = artifacts.require("TestContract");
 
@@ -10,7 +10,6 @@ contract("Identity", async (accounts) => {
     const oneUnit = web3.toWei(100, "finney");
 
     afterEach("print gas", printTestGas);
-    after("all done", printTotalGas);
 
     beforeEach("new contract", async () => {
         ({ identity, addr, keys } = await setupTest(

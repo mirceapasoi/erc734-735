@@ -137,7 +137,7 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
     let contractClaims = await identity.numClaims();
     contractClaims.should.be.bignumber.equal(claims.length);
 
-    console.debug(`\tSetup: ${getAndClearGas().toLocaleString()} gas (${initSum}/${totalSum} keys, ${contractClaims} claims)`.grey);
+    getAndClearGas();
 
     return {
         identity,

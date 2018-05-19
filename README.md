@@ -71,10 +71,8 @@ $ ganache-cli -l 10000000
 ...
 $ truffle test
 ...
-Setup: 5,825,603 gas (4/6 keys, 0 claims)
-    ✓ should be paused/unpaused by management keys (80ms)
+    ✓ should be paused/unpaused by management keys (5825603 gas)
 Test: 60,502 gas
-Total: 5,215,118 gas
   47 passing (53s)
 ```
 

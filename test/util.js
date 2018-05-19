@@ -25,13 +25,9 @@ export const getAndClearGas = () => {
     return t;
 }
 
-export const printTotalGas = () => {
-    console.log(`Total: ${totalGas.toLocaleString()} gas`.green);
-}
-
 export const printTestGas = () => {
     totalGas += gasUsed;
-    console.log(`\tTest: ${getAndClearGas().toLocaleString()} gas`);
+    console.log(`\tTest only: ${getAndClearGas().toLocaleString()} gas`.grey);
 }
 
 // Measure gas

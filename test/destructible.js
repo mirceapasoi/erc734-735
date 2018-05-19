@@ -1,12 +1,11 @@
 import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
 import { setupTest, Purpose, KeyType } from './base';
-import { assertOkTx, printTestGas, printTotalGas } from './util';
+import { assertOkTx, printTestGas } from './util';
 
 contract("Destructible", async (accounts) => {
     let identity, addr, keys;
 
     afterEach("print gas", printTestGas);
-    after("all done", printTotalGas);
 
     beforeEach("new contract", async () => {
         ({ identity, addr, keys } = await setupTest(accounts, [2, 2, 0, 0], [3, 3, 0, 0]));

@@ -1,6 +1,6 @@
 import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
 import { setupTest, assertKeyCount, Purpose, KeyType } from './base';
-import { printTestGas, printTotalGas, assertOkTx } from './util';
+import { printTestGas, assertOkTx } from './util';
 
 
 const TestContract = artifacts.require("TestContract");
@@ -9,7 +9,6 @@ contract("MultiSig", async (accounts) => {
     let identity, otherContract, addr, keys;
 
     afterEach("print gas", printTestGas);
-    after("all done", printTotalGas);
 
     beforeEach("new contract", async () => {
         ({ identity, addr, keys } = await setupTest(accounts, [3, 3, 0, 0], [4, 4, 1, 0]));
