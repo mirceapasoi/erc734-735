@@ -19,10 +19,10 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     ///  `msg.sender` is used as an initial MANAGEMENT_KEY, ACTION_KEY and CLAIM_SIGNER_KEY
     /// @param _keys Keys to start contract with, in ascending order; in case of equality, purposes must be ascending
     /// @param _purposes Key purposes (in the same order as _keys)
-    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, claim types must be ascending
+    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, topics must be ascending
     /// @param _managementThreshold Multi-sig threshold for MANAGEMENT_KEY
     /// @param _actionThreshold Multi-sig threshold for ACTION_KEY
-    /// @param _claimTypes Claim types (in the same order as _issuers)
+    /// @param _topics Claim topics (in the same order as _issuers)
     /// @param _signatures All the initial claim signatures concatenated in one bytes array
     /// @param _datas All the initial claim data concatenated in one bytes array
     /// @param _uris All the initial claim URIs concatenated in one string
@@ -33,7 +33,7 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
         uint256 _managementThreshold,
         uint256 _actionThreshold,
         address[] _issuers,
-        uint256[] _claimTypes,
+        uint256[] _topics,
         // TODO: Pass bytes[] signatures, bytes[] data and string[] uris once ABIEncoderV2 is out
         bytes _signatures,
         bytes _datas,
@@ -43,10 +43,10 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
         public
     {
         _validateKeys(_keys, _purposes);
-        _validateClaims(_issuers, _claimTypes, _sizes);
+        _validateClaims(_issuers, _topics, _sizes);
 
         _addKeys(_keys, _purposes, _managementThreshold, _actionThreshold);
-        _addClaims(_issuers, _claimTypes, _signatures, _datas, _uris, _sizes);
+        _addClaims(_issuers, _topics, _signatures, _datas, _uris, _sizes);
 
         // Supports both ERC 725 & 735
         supportedInterfaces[ERC725ID() ^ ERC735ID()] = true;
@@ -120,32 +120,32 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     }
 
     /// @dev Validate claims are sorted and unique
-    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, claim types must be ascending
-    /// @param _claimTypes Claim types (in the same order as _issuers)
+    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, topics must be ascending
+    /// @param _topics Claim topics (in the same order as _issuers)
     /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
     function _validateClaims
     (
         address[] _issuers,
-        uint256[] _claimTypes,
+        uint256[] _topics,
         uint8[] _sizes
     )
     private
     pure
     {
         // Validate claims are sorted and unique
-        require(_issuers.length == _claimTypes.length);
-        require(3 * _claimTypes.length == _sizes.length);
+        require(_issuers.length == _topics.length);
+        require(3 * _topics.length == _sizes.length);
         for (uint i = 1; i < _issuers.length; i++) {
-            // Expect input to be in sorted order, first by issuer, then by claimType
-            // Sorted order guarantees (issuer, claimType) pairs are unique
+            // Expect input to be in sorted order, first by issuer, then by topic
+            // Sorted order guarantees (issuer, topic) pairs are unique
             address prevIssuer = _issuers[i - 1];
-            require(_issuers[i] != prevIssuer || (_issuers[i] == prevIssuer && _claimTypes[i] > _claimTypes[i - 1]));
+            require(_issuers[i] != prevIssuer || (_issuers[i] == prevIssuer && _topics[i] > _topics[i - 1]));
         }
     }
 
     /// @dev Add claims to contract without an URI
-    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, claim types must be ascending
-    /// @param _claimTypes Claim types (in the same order as _issuers)
+    /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, topics must be ascending
+    /// @param _topics Claim topics (in the same order as _issuers)
     /// @param _signatures All the initial claim signatures concatenated in one bytes array
     /// @param _datas All the initial claim data concatenated in one bytes array
     /// @param _uris All the initial claim URIs concatenated in one string
@@ -153,7 +153,7 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     function _addClaims
     (
         address[] _issuers,
-        uint256[] _claimTypes,
+        uint256[] _topics,
         bytes _signatures,
         bytes _datas,
         string _uris,
@@ -169,11 +169,11 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
             // Check signature
             signature = _signatures.slice(offset[0], _sizes[3 * i]);
             data = _datas.slice(offset[1], _sizes[3 * i + 1]);
-            require(_validSignature(_claimTypes[i], ECDSA_SCHEME, _issuers[i], signature, data));
+            require(_validSignature(_topics[i], ECDSA_SCHEME, _issuers[i], signature, data));
             // Add claim
             _addClaim(
-                getClaimId(_issuers[i], _claimTypes[i]),
-                _claimTypes[i],
+                getClaimId(_issuers[i], _topics[i]),
+                _topics[i],
                 ECDSA_SCHEME,
                 _issuers[i],
                 signature,

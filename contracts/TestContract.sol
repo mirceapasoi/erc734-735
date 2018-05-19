@@ -31,7 +31,7 @@ contract TestContract {
         require(msg.sender.doesContractImplementInterface(0x10765379));
         // Get first LABEL claim
         ERC735 id = ERC735(msg.sender);
-        // 5 is LABEL_CLAIM
+        // 5 is LABEL_TOPIC
         bytes32[] memory claimIds = id.getClaimIdsByType(5);
         bytes memory data;
         (, , , , data, ) = id.getClaim(claimIds[0]);

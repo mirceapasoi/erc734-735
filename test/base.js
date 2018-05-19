@@ -14,7 +14,7 @@ export const KeyType = {
     ECDSA: 1,
 };
 
-export const ClaimType = {
+export const Topic = {
     BIOMETRIC: 1,
     RESIDENCE: 2,
     REGISTRY: 3,
@@ -85,7 +85,7 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
     if (claims.length > 0) {
         // Must have at least one claim address if making claim
         assert(addr.claim.length > 0);
-        // First, sort claims by issuer, claimType
+        // First, sort claims by issuer, topic
         claims.sort((c1, c2) => {
             if (c1.self == c2.self) return c1.type - c2.type;
             let a1 = c1.self ? willDeployAt : otherIdentity.address;

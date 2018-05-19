@@ -1,5 +1,5 @@
 import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
-import { setupTest, Purpose, KeyType, ClaimType } from './base';
+import { setupTest, Purpose, KeyType, Topic } from './base';
 import { assertOkTx, printTestGas, printTotalGas } from './util';
 
 const TestContract = artifacts.require("TestContract");
@@ -17,7 +17,7 @@ contract("Identity", async (accounts) => {
             accounts,
             [2, 2, 1, 0],
             [3, 3, 1, 0],
-            [{type: ClaimType.LABEL, data: 'Mircea Pasoi', uri: '', self: true}]
+            [{type: Topic.LABEL, data: 'Mircea Pasoi', uri: '', self: true}]
         ));
     })
 
@@ -58,7 +58,7 @@ contract("Identity", async (accounts) => {
         // Check if this is an action key in the identity you claim
         assert.isTrue(await identity.keyHasPurpose(signedByKey, Purpose.ACTION));
         // I now believe you are identity.address so I'll search for a label
-        let labels = await identity.getClaimIdsByType(ClaimType.LABEL);
+        let labels = await identity.getClaimIdsByType(Topic.LABEL);
         assert.isAbove(labels.length, 0);
         // Get first label
         const [, , , , label, ] = await identity.getClaim(labels[0]);
