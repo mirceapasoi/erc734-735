@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./Pausable.sol";
 import "./ERC725.sol";
@@ -66,7 +66,7 @@ contract MultiSig is Pausable, ERC725 {
         pure
         returns (uint256)
     {
-        return uint(keccak256(self, _to, _value, _data, _nonce));
+        return uint(keccak256(abi.encodePacked(self, _to, _value, _data, _nonce)));
     }
 
     /// @dev Generate a unique ID for an execution request

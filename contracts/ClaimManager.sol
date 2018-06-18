@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "../node_modules/zeppelin-solidity/contracts/ECRecovery.sol";
 import "./Pausable.sol";
@@ -279,7 +279,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     {
         // TODO: Doesn't allow multiple claims from the same issuer with the same type
         // This is particularly inconvenient for self-claims (e.g. self-claim multiple labels)
-        return keccak256(issuer, topic);
+        return keccak256(abi.encodePacked(issuer, topic));
     }
 
     /// @dev Generate claim to sign. Especially useful in tests
@@ -292,7 +292,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         pure
         returns (bytes32)
     {
-        return keccak256(subject, topic, data);
+        return keccak256(abi.encodePacked(subject, topic, data));
     }
 
     /// @dev Recover address used to sign a claim
@@ -304,6 +304,6 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         pure
         returns (address)
     {
-        return keccak256(ETH_PREFIX, toSign).recover(signature);
+        return keccak256(abi.encodePacked(ETH_PREFIX, toSign)).recover(signature);
     }
 }
