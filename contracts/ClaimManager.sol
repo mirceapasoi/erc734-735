@@ -86,6 +86,10 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         if (issuer.doesContractImplementInterface(ERC725ID())) {
             // Issuer is another Identity contract, is this an action key?
             require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY));
+        } else {
+            // Sender is NOT Management or Self or Issuer
+            // Invalid
+            revert();
         }
         _;
     }
