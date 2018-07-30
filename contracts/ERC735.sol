@@ -5,9 +5,16 @@ import "./ERC165.sol";
 /// @title ERC735
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC735
+
 contract ERC735 is ERC165 {
+    /// @dev Constructor that adds ERC735 as a supported interface
+    constructor() internal {
+        supportedInterfaces[ERC735ID()] = true;
+    }
+
     /// @dev ID for ERC165 pseudo-introspection
     /// @return ID for ERC725 interface
+    // solhint-disable-next-line func-name-mixedcase
     function ERC735ID() public pure returns (bytes4) {
         return (
             this.getClaim.selector ^ this.getClaimIdsByType.selector ^
@@ -15,24 +22,19 @@ contract ERC735 is ERC165 {
         );
     }
 
-    /// @dev Constructor that adds ERC735 as a supported interface
-    constructor() internal {
-        supportedInterfaces[ERC735ID()] = true;
-    }
-
     // Topic
-    uint256 constant BIOMETRIC_TOPIC = 1; // you're a person and not a business
-    uint256 constant RESIDENCE_TOPIC = 2; // you have a physical address or reference point
-    uint256 constant REGISTRY_TOPIC = 3;
-    uint256 constant PROFILE_TOPIC = 4; // TODO: social media profiles, blogs, etc.
-    uint256 constant LABEL_TOPIC = 5; // TODO: real name, business name, nick name, brand name, alias, etc.
+    uint256 public constant BIOMETRIC_TOPIC = 1; // you're a person and not a business
+    uint256 public constant RESIDENCE_TOPIC = 2; // you have a physical address or reference point
+    uint256 public constant REGISTRY_TOPIC = 3;
+    uint256 public constant PROFILE_TOPIC = 4; // TODO: social media profiles, blogs, etc.
+    uint256 public constant LABEL_TOPIC = 5; // TODO: real name, business name, nick name, brand name, alias, etc.
 
     // Scheme
-    uint256 constant ECDSA_SCHEME = 1;
+    uint256 public constant ECDSA_SCHEME = 1;
     // https://medium.com/@alexberegszaszi/lets-bring-the-70s-to-ethereum-48daa16a4b51
-    uint256 constant RSA_SCHEME = 2;
+    uint256 public constant RSA_SCHEME = 2;
     // 3 is contract verification, where the data will be call data, and the issuer a contract address to call
-    uint256 constant CONTRACT_SCHEME = 3;
+    uint256 public constant CONTRACT_SCHEME = 3;
 
     // Events
     event ClaimRequested(uint256 indexed claimRequestId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);

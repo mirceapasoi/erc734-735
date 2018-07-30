@@ -6,6 +6,7 @@ import "./ERC735.sol";
 /// @title TestContract
 /// @author Mircea Pasoi
 /// @dev Contract used in unit tests
+
 contract TestContract {
     // Implements ERC165
     using ERC165Query for address;
@@ -15,9 +16,6 @@ contract TestContract {
 
     // Counts calls by msg.sender
     mapping (address => uint) public numCalls;
-
-    constructor() public {
-    }
 
     /// @dev Increments the number of calls from sender
     function callMe() external {

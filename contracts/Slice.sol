@@ -3,6 +3,7 @@ pragma solidity ^0.4.21;
 /// @title Slice
 /// @author https://github.com/nick
 /// @notice Library for slices variable-length types (bytes, string)
+
 library Slice {
     /// @dev Slice a bytes array
     /// @param offset Index to start slice at

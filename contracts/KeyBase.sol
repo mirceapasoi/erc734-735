@@ -6,8 +6,9 @@ import "./KeyStore.sol";
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC725 implementation
 /// @dev Key data is stored using KeyStore library
+
 contract KeyBase {
-    uint256 constant MANAGEMENT_KEY = 1;
+    uint256 public constant MANAGEMENT_KEY = 1;
 
     // For multi-sig
     uint256 public managementThreshold = 1;
@@ -15,7 +16,27 @@ contract KeyBase {
 
     // Key storage
     using KeyStore for KeyStore.Keys;
-    KeyStore.Keys allKeys;
+    KeyStore.Keys internal allKeys;
+
+    /// @dev Number of keys managed by the contract
+    /// @return Unsigned integer number of keys
+    function numKeys()
+        external
+        view
+        returns (uint)
+    {
+        return allKeys.numKeys;
+    }
+
+    /// @dev Convert an Ethereum address (20 bytes) to an ERC725 key (32 bytes)
+    /// @dev It's just a simple typecast, but it's especially useful in tests
+    function addrToKey(address addr)
+        public
+        pure
+        returns (bytes32)
+    {
+        return bytes32(addr);
+    }
 
     /// @dev Checks if sender is either the identity contract or a MANAGEMENT_KEY
     /// @dev If the multi-sig threshold for MANAGEMENT_KEY if >1, it will throw an error
@@ -38,25 +59,5 @@ contract KeyBase {
     modifier onlyManagementOrSelf {
         require(_managementOrSelf());
         _;
-    }
-
-    /// @dev Number of keys managed by the contract
-    /// @return Unsigned integer number of keys
-    function numKeys()
-        external
-        view
-        returns (uint)
-    {
-        return allKeys.numKeys;
-    }
-
-    /// @dev Convert an Ethereum address (20 bytes) to an ERC725 key (32 bytes)
-    /// @dev It's just a simple typecast, but it's especially useful in tests
-    function addrToKey(address addr)
-        public
-        pure
-        returns (bytes32)
-    {
-        return bytes32(addr);
     }
 }

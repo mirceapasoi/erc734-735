@@ -10,11 +10,12 @@ import "./ERC165Query.sol";
 /// @author Mircea Pasoi
 /// @notice Implement functions from ERC735 spec
 /// @dev  Key data is stored using KeyStore library. Inheriting ERC725 for the getters
+
 contract ClaimManager is Pausable, ERC725, ERC735 {
     using ECRecovery for bytes32;
     using ERC165Query for address;
 
-    bytes constant ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
+    bytes constant internal ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
 
     struct Claim {
         uint256 topic;
@@ -24,117 +25,12 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         bytes data;
         string uri;
     }
-    mapping(bytes32 => Claim) claims;
-    mapping(uint256 => bytes32[]) claimsByTopic;
+
+    mapping(bytes32 => Claim) internal claims;
+    mapping(uint256 => bytes32[]) internal claimsByTopic;
     uint public numClaims;
 
-    /// @dev Checks if a given claim is valid
-    /// @param _topic Type of claim
-    /// @param _scheme Scheme used for the signatures
-    /// @param issuer Address of issuer
-    /// @param _signature The actual signature
-    /// @param _data The data that was signed
-    /// @return `false` if the signature is invalid or if the scheme is not implemented
-    function _validSignature(
-        uint256 _topic,
-        uint256 _scheme,
-        address issuer,
-        bytes _signature,
-        bytes _data
-    )
-        internal
-        view
-        returns (bool)
-    {
-        if (_scheme == ECDSA_SCHEME) {
-            address signedBy = getSignatureAddress(claimToSign(address(this), _topic, _data), _signature);
-            if (issuer == signedBy) {
-                // Issuer signed the signature
-                return true;
-            } else
-            if (issuer == address(this)) {
-                return allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
-            } else
-            if (issuer.doesContractImplementInterface(ERC725ID())) {
-                // Issuer is an Identity contract
-                // It should hold the key with which the above message was signed.
-                // If the key is not present anymore, the claim SHOULD be treated as invalid.
-                return ERC725(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
-            }
-            // Invalid
-            return false;
-        }
-        else {
-            // Not implemented
-            return false;
-        }
-    }
-
-    /// @dev Modifier that only allows keys of purpose 1, the identity itself, or the issuer or the claim
-    modifier onlyManagementOrSelfOrIssuer(bytes32 _claimId) {
-        address issuer = claims[_claimId].issuer;
-        // Must exist
-        require(issuer != 0);
-
-        // Can perform action on claim
-        if (_managementOrSelf()) {
-            // Valid
-        } else
-        if (msg.sender == issuer) {
-            // MUST only be done by the issuer of the claim
-        } else
-        if (issuer.doesContractImplementInterface(ERC725ID())) {
-            // Issuer is another Identity contract, is this an action key?
-            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY));
-        } else {
-            // Sender is NOT Management or Self or Issuer
-            // Invalid
-            revert();
-        }
-        _;
-    }
-
-    /// @dev Add key data to the identity without checking if it already exists
-    /// @param _claimId Claim ID
-    /// @param _topic Type of claim
-    /// @param _scheme Scheme used for the signatures
-    /// @param issuer Address of issuer
-    /// @param _signature The actual signature
-    /// @param _data The data that was signed
-    /// @param _uri The location of the claim
-    function _addClaim(
-        bytes32 _claimId,
-        uint256 _topic,
-        uint256 _scheme,
-        address issuer,
-        bytes _signature,
-        bytes _data,
-        string _uri
-    )
-        internal
-    {
-        // New claim
-        claims[_claimId] = Claim(_topic, _scheme, issuer, _signature, _data, _uri);
-        claimsByTopic[_topic].push(_claimId);
-        numClaims++;
-        emit ClaimAdded(_claimId, _topic, _scheme, issuer, _signature, _data, _uri);
-    }
-
-    /// @dev Update the URI of an existing claim without any checks
-    /// @param _topic Type of claim
-    /// @param issuer Address of issuer
-    /// @param _uri The location of the claim
-    function _updateClaimUri(
-        uint256 _topic,
-        address issuer,
-        string _uri
-    )
-    internal
-    {
-        claims[getClaimId(issuer, _topic)].uri = _uri;
-    }
-
-    /// @dev Requests the ADDITION or the CHANGE of a claim from an issuer.
+  /// @dev Requests the ADDITION or the CHANGE of a claim from an issuer.
     ///  Claims can requested to be added by anybody, including the claim holder itself (self issued).
     /// @param _topic Type of claim
     /// @param _scheme Scheme used for the signatures
@@ -309,5 +205,111 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         returns (address)
     {
         return keccak256(abi.encodePacked(ETH_PREFIX, toSign)).recover(signature);
+    }
+
+    /// @dev Checks if a given claim is valid
+    /// @param _topic Type of claim
+    /// @param _scheme Scheme used for the signatures
+    /// @param issuer Address of issuer
+    /// @param _signature The actual signature
+    /// @param _data The data that was signed
+    /// @return `false` if the signature is invalid or if the scheme is not implemented
+    function _validSignature(
+        uint256 _topic,
+        uint256 _scheme,
+        address issuer,
+        bytes _signature,
+        bytes _data
+    )
+        internal
+        view
+        returns (bool)
+    {
+        if (_scheme == ECDSA_SCHEME) {
+            address signedBy = getSignatureAddress(claimToSign(address(this), _topic, _data), _signature);
+            if (issuer == signedBy) {
+                // Issuer signed the signature
+                return true;
+            } else
+            if (issuer == address(this)) {
+                return allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+            } else
+            if (issuer.doesContractImplementInterface(ERC725ID())) {
+                // Issuer is an Identity contract
+                // It should hold the key with which the above message was signed.
+                // If the key is not present anymore, the claim SHOULD be treated as invalid.
+                return ERC725(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+            }
+            // Invalid
+            return false;
+        } else {
+            // Not implemented
+            return false;
+        }
+    }
+
+    /// @dev Modifier that only allows keys of purpose 1, the identity itself, or the issuer or the claim
+    modifier onlyManagementOrSelfOrIssuer(bytes32 _claimId) {
+        address issuer = claims[_claimId].issuer;
+        // Must exist
+        require(issuer != 0);
+
+        // Can perform action on claim
+        // solhint-disable-next-line no-empty-blocks
+        if (_managementOrSelf()) {
+            // Valid
+        } else
+        // solhint-disable-next-line no-empty-blocks
+        if (msg.sender == issuer) {
+            // MUST only be done by the issuer of the claim
+        } else
+        if (issuer.doesContractImplementInterface(ERC725ID())) {
+            // Issuer is another Identity contract, is this an action key?
+            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY));
+        } else {
+            // Invalid! Sender is NOT Management or Self or Issuer
+            revert();
+        }
+        _;
+    }
+
+    /// @dev Add key data to the identity without checking if it already exists
+    /// @param _claimId Claim ID
+    /// @param _topic Type of claim
+    /// @param _scheme Scheme used for the signatures
+    /// @param issuer Address of issuer
+    /// @param _signature The actual signature
+    /// @param _data The data that was signed
+    /// @param _uri The location of the claim
+    function _addClaim(
+        bytes32 _claimId,
+        uint256 _topic,
+        uint256 _scheme,
+        address issuer,
+        bytes _signature,
+        bytes _data,
+        string _uri
+    )
+        internal
+    {
+        // New claim
+        claims[_claimId] = Claim(_topic, _scheme, issuer, _signature, _data, _uri);
+        claimsByTopic[_topic].push(_claimId);
+        numClaims++;
+        emit ClaimAdded(_claimId, _topic, _scheme, issuer, _signature, _data, _uri);
+    }
+
+    /// @dev Update the URI of an existing claim without any checks
+    /// @param _topic Type of claim
+    /// @param issuer Address of issuer
+    /// @param _uri The location of the claim
+    function _updateClaimUri(
+        uint256 _topic,
+        address issuer,
+        string _uri
+    )
+    internal
+    {
+        claims[getClaimId(issuer, _topic)].uri = _uri;
     }
 }

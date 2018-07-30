@@ -7,9 +7,10 @@ import "./ERC725.sol";
 /// @author Mircea Pasoi
 /// @notice Implement execute and multi-sig functions from ERC725 spec
 /// @dev Key data is stored using KeyStore library. Inheriting ERC725 for the getters
+
 contract MultiSig is Pausable, ERC725 {
     // To prevent replay attacks
-    uint256 nonce = 1;
+    uint256 private nonce = 1;
 
     struct Execution {
         address to;
@@ -17,59 +18,11 @@ contract MultiSig is Pausable, ERC725 {
         bytes data;
         uint256 needsApprove;
     }
+
     mapping (uint256 => Execution) public execution;
     mapping (uint256 => address[]) public approved;
 
-    /// @dev Change multi-sig threshold for MANAGEMENT_KEY
-    /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
-    function changeManagementThreshold(uint threshold)
-        public
-        whenNotPaused
-        onlyManagementOrSelf
-    {
-        require(threshold > 0);
-        // Don't lock yourself out
-        uint numManagementKeys = getKeysByPurpose(MANAGEMENT_KEY).length;
-        require(threshold <= numManagementKeys);
-        managementThreshold = threshold;
-    }
-
-    /// @dev Change multi-sig threshold for ACTION_KEY
-    /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
-    function changeActionThreshold(uint threshold)
-        public
-        whenNotPaused
-        onlyManagementOrSelf
-    {
-        require(threshold > 0);
-        // Don't lock yourself out
-        uint numActionKeys = getKeysByPurpose(ACTION_KEY).length;
-        require(threshold <= numActionKeys);
-        actionThreshold = threshold;
-    }
-
-    /// @dev Generate a unique ID for an execution request
-    /// @param self address of identity contract
-    /// @param _to address being called (msg.sender)
-    /// @param _value ether being sent (msg.value)
-    /// @param _data ABI encoded call data (msg.data)
-    /// @param _nonce nonce to prevent replay attacks
-    /// @return Integer ID of execution request
-    function getExecutionId(
-        address self,
-        address _to,
-        uint256 _value,
-        bytes _data,
-        uint _nonce
-    )
-        private
-        pure
-        returns (uint256)
-    {
-        return uint(keccak256(abi.encodePacked(self, _to, _value, _data, _nonce)));
-    }
-
-    /// @dev Generate a unique ID for an execution request
+       /// @dev Generate a unique ID for an execution request
     /// @param _to address being called (msg.sender)
     /// @param _value ether being sent (msg.value)
     /// @param _data ABI encoded call data (msg.data)
@@ -120,38 +73,6 @@ contract MultiSig is Pausable, ERC725 {
         }
 
         return executionId;
-    }
-
-    /// @dev Executes an action on other contracts, or itself, or a transfer of ether
-    /// @param _id Execution ID
-    /// @param e Execution data
-    /// @param clean `true` if the internal state should be cleaned up after the execution
-    /// @return `true` if the execution succeeded, `false` otherwise
-    function _execute(
-        uint256 _id,
-        Execution e,
-        bool clean
-    )
-        private
-        returns (bool)
-    {
-        // Must exist
-        require(e.to != 0);
-        // Call
-        // TODO: Should we also support DelegateCall and Create (new contract)?
-        bool success = e.to.call.value(e.value)(e.data);
-        if (!success) {
-            emit ExecutionFailed(_id, e.to, e.value, e.data);
-            return false;
-        }
-        emit Executed(_id, e.to, e.value, e.data);
-        // Clean up
-        if (!clean) {
-            return true;
-        }
-        delete execution[_id];
-        delete approved[_id];
-        return true;
     }
 
     /// @dev Approves an execution. If the execution is being approved multiple times,
@@ -212,5 +133,87 @@ contract MultiSig is Pausable, ERC725 {
             }
             return true;
         }
+    }
+
+    /// @dev Change multi-sig threshold for MANAGEMENT_KEY
+    /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
+    function changeManagementThreshold(uint threshold)
+        public
+        whenNotPaused
+        onlyManagementOrSelf
+    {
+        require(threshold > 0);
+        // Don't lock yourself out
+        uint numManagementKeys = getKeysByPurpose(MANAGEMENT_KEY).length;
+        require(threshold <= numManagementKeys);
+        managementThreshold = threshold;
+    }
+
+    /// @dev Change multi-sig threshold for ACTION_KEY
+    /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
+    function changeActionThreshold(uint threshold)
+        public
+        whenNotPaused
+        onlyManagementOrSelf
+    {
+        require(threshold > 0);
+        // Don't lock yourself out
+        uint numActionKeys = getKeysByPurpose(ACTION_KEY).length;
+        require(threshold <= numActionKeys);
+        actionThreshold = threshold;
+    }
+
+    /// @dev Generate a unique ID for an execution request
+    /// @param self address of identity contract
+    /// @param _to address being called (msg.sender)
+    /// @param _value ether being sent (msg.value)
+    /// @param _data ABI encoded call data (msg.data)
+    /// @param _nonce nonce to prevent replay attacks
+    /// @return Integer ID of execution request
+    function getExecutionId(
+        address self,
+        address _to,
+        uint256 _value,
+        bytes _data,
+        uint _nonce
+    )
+        private
+        pure
+        returns (uint256)
+    {
+        return uint(keccak256(abi.encodePacked(self, _to, _value, _data, _nonce)));
+    }
+
+    /// @dev Executes an action on other contracts, or itself, or a transfer of ether
+    /// @param _id Execution ID
+    /// @param e Execution data
+    /// @param clean `true` if the internal state should be cleaned up after the execution
+    /// @return `true` if the execution succeeded, `false` otherwise
+    function _execute(
+        uint256 _id,
+        Execution e,
+        bool clean
+    )
+        private
+        returns (bool)
+    {
+        // Must exist
+        require(e.to != 0);
+        // Call
+        // TODO: Should we also support DelegateCall and Create (new contract)?
+        // solhint-disable-next-line avoid-call-value
+        bool success = e.to.call.value(e.value)(e.data);
+        if (!success) {
+            emit ExecutionFailed(_id, e.to, e.value, e.data);
+            return false;
+        }
+        emit Executed(_id, e.to, e.value, e.data);
+        // Clean up
+        if (!clean) {
+            return true;
+        }
+        delete execution[_id];
+        delete approved[_id];
+        return true;
     }
 }

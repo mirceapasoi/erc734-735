@@ -5,9 +5,16 @@ import "./ERC165.sol";
 /// @title ERC725
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC725
+
 contract ERC725 is ERC165 {
+    /// @dev Constructor that adds ERC725 as a supported interface
+    constructor() internal {
+        supportedInterfaces[ERC725ID()] = true;
+    }
+
     /// @dev ID for ERC165 pseudo-introspection
     /// @return ID for ERC725 interface
+    // solhint-disable-next-line func-name-mixedcase
     function ERC725ID() public pure returns (bytes4) {
         return (
             this.getKey.selector ^ this.keyHasPurpose.selector ^ this.getKeysByPurpose.selector ^
@@ -15,25 +22,20 @@ contract ERC725 is ERC165 {
         );
     }
 
-    /// @dev Constructor that adds ERC725 as a supported interface
-    constructor() internal {
-        supportedInterfaces[ERC725ID()] = true;
-    }
-
     // Purpose
     // 1: MANAGEMENT keys, which can manage the identity
-    uint256 constant MANAGEMENT_KEY = 1;
+    uint256 public constant MANAGEMENT_KEY = 1;
     // 2: ACTION keys, which perform actions in this identities name (signing, logins, transactions, etc.)
-    uint256 constant ACTION_KEY = 2;
+    uint256 public constant ACTION_KEY = 2;
     // 3: CLAIM signer keys, used to sign claims on other identities which need to be revokable.
-    uint256 constant CLAIM_SIGNER_KEY = 3;
+    uint256 public constant CLAIM_SIGNER_KEY = 3;
     // 4: ENCRYPTION keys, used to encrypt data e.g. hold in claims.
-    uint256 constant ENCRYPTION_KEY = 4;
+    uint256 public constant ENCRYPTION_KEY = 4;
 
     // KeyType
-    uint256 constant ECDSA_TYPE = 1;
+    uint256 public constant ECDSA_TYPE = 1;
     // https://medium.com/@alexberegszaszi/lets-bring-the-70s-to-ethereum-48daa16a4b51
-    uint256 constant RSA_TYPE = 2;
+    uint256 public constant RSA_TYPE = 2;
 
     // Events
     event KeyAdded(bytes32 indexed key, uint256 indexed purpose, uint256 indexed keyType);

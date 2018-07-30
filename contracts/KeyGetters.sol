@@ -6,6 +6,7 @@ import "./KeyBase.sol";
 /// @author Mircea Pasoi
 /// @notice Implement getter functions from ERC725 spec
 /// @dev Key data is stored using KeyStore library
+
 contract KeyGetters is KeyBase {
     /// @dev Find the key data, if held by the identity
     /// @param _key Key bytes to find

@@ -11,6 +11,7 @@ import "./Slice.sol";
 /// @title Identity
 /// @author Mircea Pasoi
 /// @notice Identity contract implementing both ERC 725 and ERC 735
+
 contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetters {
     using Slice for bytes;
     using Slice for string;
@@ -27,7 +28,8 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _datas All the initial claim data concatenated in one bytes array
     /// @param _uris All the initial claim URIs concatenated in one string
     /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
-    constructor(
+    constructor
+    (
         bytes32[] _keys,
         uint256[] _purposes,
         uint256 _managementThreshold,
@@ -40,8 +42,7 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
         string _uris,
         uint8[] _sizes
     )
-        public
-    {
+    public {
         _validateKeys(_keys, _purposes);
         _validateClaims(_issuers, _topics, _sizes);
 
@@ -50,6 +51,11 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
 
         // Supports both ERC 725 & 735
         supportedInterfaces[ERC725ID() ^ ERC735ID()] = true;
+    }
+
+    // Fallback function accepts Ether transactions
+    // solhint-disable-next-line no-empty-blocks
+    function () external payable {
     }
 
     /// @dev Validate keys are sorted and unique
@@ -184,9 +190,5 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
             offset[1] += _sizes[3 * i + 1];
             offset[2] += _sizes[3 * i + 2];
         }
-    }
-
-    // Fallback function accepts Ether transactions
-    function () external payable {
     }
 }
