@@ -110,9 +110,6 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
         }
     }
 
-    let sizes = claims.map((c, i) => [signatures[i].length, datas[i].length, c.uri.length]);
-    sizes = [].concat(...sizes);
-
     // Deploy identity
     let identity = await Identity.new(
         // Keys
@@ -124,10 +121,9 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
         // Claims
         claims.map(c => c.self ? willDeployAt : otherIdentity.address),
         claims.map(c => c.type),
-        signatures.reduce((a, b) => a.concat(b), []),
-        datas.reduce((a, b) => a.concat(b), []),
-        claims.map(c => c.uri).join(''),
-        sizes,
+        signatures,
+        datas,
+        claims.map(c => c.uri),
         // Use max gas for deploys
         {from: addr.manager[0], gas: blockGasLimit}
     );

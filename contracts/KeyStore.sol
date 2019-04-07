@@ -24,7 +24,7 @@ library KeyStore {
     function find(Keys storage self, bytes32 key, uint256 purpose)
         internal
         view
-        returns (bool found)
+        returns (bool)
     {
         Key memory k = self.keyData[key];
         if (k.key == 0) {
