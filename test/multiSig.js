@@ -1,7 +1,6 @@
-import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
+import { shouldFail } from 'openzeppelin-test-helpers';
 import { setupTest, assertKeyCount, Purpose, KeyType } from './base';
 import { printTestGas, assertOkTx } from './util';
-
 
 const TestContract = artifacts.require("TestContract");
 
@@ -25,7 +24,7 @@ contract("MultiSig", async (accounts) => {
         it("should add key", async () => {
             await assertKeyCount(identity, Purpose.ACTION, 3);
 
-            let addKeyData = await identity.contract.addKey.getData(keys.action[3], Purpose.ACTION, KeyType.ECDSA);
+            let addKeyData = identity.contract.methods.addKey(keys.action[3], Purpose.ACTION, KeyType.ECDSA).encodeABI();
             await assertOkTx(identity.execute(identity.address, 0, addKeyData, {from: addr.manager[0]}));
 
             await assertKeyCount(identity, Purpose.ACTION, 4);
@@ -34,8 +33,8 @@ contract("MultiSig", async (accounts) => {
         it("should add key only with management keys", async () => {
             await assertKeyCount(identity, Purpose.ACTION, 3);
 
-            let addKeyData = await identity.contract.addKey.getData(keys.action[3], Purpose.ACTION, KeyType.ECDSA);
-            await assertRevert(identity.execute(identity.address, 0, addKeyData, {from: addr.action[0]}));
+            let addKeyData = identity.contract.methods.addKey(keys.action[3], Purpose.ACTION, KeyType.ECDSA).encodeABI();
+            await shouldFail(identity.execute(identity.address, 0, addKeyData, {from: addr.action[0]}));
 
             await assertKeyCount(identity, Purpose.ACTION, 3);
         });
@@ -43,7 +42,7 @@ contract("MultiSig", async (accounts) => {
         it("should remove key", async () => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
-            let removeKeyData = await identity.contract.removeKey.getData(keys.manager[0], Purpose.MANAGEMENT);
+            let removeKeyData = identity.contract.methods.removeKey(keys.manager[0], Purpose.MANAGEMENT).encodeABI();
             await assertOkTx(identity.execute(identity.address, 0, removeKeyData, {from: addr.manager[1]}));
 
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
@@ -52,8 +51,8 @@ contract("MultiSig", async (accounts) => {
         it("should remove key only with management keys", async () => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
-            let removeKeyData = await identity.contract.removeKey.getData(keys.manager[0], Purpose.MANAGEMENT);
-            await assertRevert(identity.execute(identity.address, 0, removeKeyData, {from: addr.action[1]}));
+            let removeKeyData = identity.contract.methods.removeKey(keys.manager[0], Purpose.MANAGEMENT).encodeABI();
+            await shouldFail(identity.execute(identity.address, 0, removeKeyData, {from: addr.action[1]}));
 
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
         });
@@ -72,7 +71,7 @@ contract("MultiSig", async (accounts) => {
             // Identity never called other contract
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
-            let callData = await otherContract.contract.callMe.getData();
+            let callData = otherContract.contract.methods.callMe().encodeABI();
             await assertOkTx(identity.execute(otherContract.address, 0, callData, {from: addr.action[1]}));
 
             // Identity called other contract
@@ -82,8 +81,8 @@ contract("MultiSig", async (accounts) => {
         it("should not call other contracts with management keys", async () => {
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
-            let callData = await otherContract.contract.callMe.getData();
-            await assertRevert(identity.execute(otherContract.address, 0, callData, {from: addr.manager[1]}));
+            let callData = otherContract.contract.methods.callMe().encodeABI();
+            await shouldFail(identity.execute(otherContract.address, 0, callData, {from: addr.manager[1]}));
 
             assert.equal(await otherContract.numCalls(identity.address), 0);
         });
@@ -91,10 +90,10 @@ contract("MultiSig", async (accounts) => {
 
     describe("multiple signatures", async () => {
         it("can't overflow threshold", async () => {
-            await assertRevert(identity.changeManagementThreshold(0, {from: addr.manager[0]}));
-            await assertRevert(identity.changeManagementThreshold(10, {from: addr.manager[1]}));
-            await assertRevert(identity.changeActionThreshold(0, {from: addr.manager[0]}));
-            await assertRevert(identity.changeActionThreshold(15, {from: addr.manager[1]}));
+            await shouldFail(identity.changeManagementThreshold(0, {from: addr.manager[0]}));
+            await shouldFail(identity.changeManagementThreshold(10, {from: addr.manager[1]}));
+            await shouldFail(identity.changeActionThreshold(0, {from: addr.manager[0]}));
+            await shouldFail(identity.changeActionThreshold(15, {from: addr.manager[1]}));
         });
 
         it("can't call directly once threshold is set", async () => {
@@ -102,8 +101,8 @@ contract("MultiSig", async (accounts) => {
             await assertOkTx(identity.changeManagementThreshold(2, {from: addr.manager[0]}));
 
             // Can't call methods directly
-            await assertRevert(identity.addKey(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
-            await assertRevert(identity.removeKey(keys.manager[2], Purpose.MANAGEMENT, {from: addr.manager[0]}));
+            await shouldFail(identity.addKey(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
+            await shouldFail(identity.removeKey(keys.manager[2], Purpose.MANAGEMENT, {from: addr.manager[0]}));
         });
 
         it("needs two managers to add a key", async () => {
@@ -114,7 +113,7 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
             // Add a 4th manager
-            let addKeyData = await identity.contract.addKey.getData(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA);
+            let addKeyData = identity.contract.methods.addKey(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA).encodeABI();
             let r = await assertOkTx(identity.execute(identity.address, 0, addKeyData, {from: addr.manager[1]}));
             let id = findExecutionId(r);
 
@@ -122,10 +121,10 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
             // Can't double approve
-            await assertRevert(identity.approve(id, true, {from: addr.manager[1]}));
+            await shouldFail(identity.approve(id, true, {from: addr.manager[1]}));
 
             // Action keys can't approve
-            await assertRevert(identity.approve(id, true, {from: addr.action[0]}));
+            await shouldFail(identity.approve(id, true, {from: addr.action[0]}));
 
             // Other manager disapproves at first
             await assertOkTx(identity.approve(id, false, {from: addr.manager[0]}));
@@ -140,7 +139,7 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 4);
 
             // ID no longer exists
-            await assertRevert(identity.approve(id, false, {from: addr.manager[2]}));
+            await shouldFail(identity.approve(id, false, {from: addr.manager[2]}));
         });
 
         it("needs three action keys to call other", async () => {
@@ -151,7 +150,7 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             // One action requested
-            let callData = await otherContract.contract.callMe.getData();
+            let callData = otherContract.contract.methods.callMe().encodeABI();
             let r = await assertOkTx(identity.execute(otherContract.address, 0, callData, {from: addr.action[1]}));
             let id = findExecutionId(r);
 
@@ -159,10 +158,10 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             // Can't double approve
-            await assertRevert(identity.approve(id, true, {from: addr.action[1]}));
+            await shouldFail(identity.approve(id, true, {from: addr.action[1]}));
 
             // Management keys can't approve
-            await assertRevert(identity.approve(id, true, {from: addr.manager[1]}));
+            await shouldFail(identity.approve(id, true, {from: addr.manager[1]}));
 
             // Approve, disapprove, approve
             await assertOkTx(identity.approve(id, true, {from: addr.action[0]}));
@@ -177,7 +176,7 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await otherContract.numCalls(identity.address), 1);
 
             // ID no longer exists
-            await assertRevert(identity.approve(id, false, {from: addr.action[1]}));
+            await shouldFail(identity.approve(id, false, {from: addr.action[1]}));
         });
     });
 

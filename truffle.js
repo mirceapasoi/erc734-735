@@ -1,6 +1,6 @@
 // <https://ethereum.stackexchange.com/questions/21210/syntaxerror-unexpected-token-import-on-truffle-test/21211#21211>
 require('babel-register')({
-  ignore: /node_modules\/(?!zeppelin-solidity)/
+  only: ['test/']
 });
 require('babel-polyfill');
 
@@ -19,6 +19,11 @@ module.exports = {
     reporterOptions : {
       currency: 'USD',
       onlyCalledMethods: true
+    }
+  },
+  compilers: {
+    solc: {
+      version: "0.5.7"
     }
   }
 };

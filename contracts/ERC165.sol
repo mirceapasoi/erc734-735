@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 /// @title ERC165
 /// @author Mircea Pasoi

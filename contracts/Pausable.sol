@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 import "./KeyBase.sol";
 
@@ -15,13 +15,13 @@ contract Pausable is KeyBase {
 
     /// @dev Modifier to make a function callable only when the contract is not paused
     modifier whenNotPaused() {
-        require(!paused);
+        require(!paused, "contract paused");
         _;
     }
 
     /// @dev Modifier to make a function callable only when the contract is paused
     modifier whenPaused() {
-        require(paused);
+        require(paused, "contract not paused");
         _;
     }
 

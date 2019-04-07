@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 import "./KeyBase.sol";
 
@@ -16,7 +16,7 @@ contract KeyGetters is KeyBase {
     )
         public
         view
-        returns(uint256[] purposes, uint256 keyType, bytes32 key)
+        returns(uint256[] memory purposes, uint256 keyType, bytes32 key)
     {
         KeyStore.Key memory k = allKeys.keyData[_key];
         purposes = k.purposes;
@@ -45,7 +45,7 @@ contract KeyGetters is KeyBase {
     function getKeysByPurpose(uint256 _purpose)
         public
         view
-        returns(bytes32[] keys)
+        returns(bytes32[] memory keys)
     {
         return allKeys.keysByPurpose[_purpose];
     }

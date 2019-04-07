@@ -1,6 +1,9 @@
-import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
-import { setupTest, assertKeyCount, Purpose, KeyType, Topic, Scheme } from './base';
-import { printTestGas, assertOkTx } from './util';
+import { shouldFail } from 'openzeppelin-test-helpers';
+import { setupTest, utf8ToBytes, Purpose, Topic, Scheme } from './base';
+import { printTestGas, assertOkTx, fixSignature } from './util';
+import { expect } from 'chai';
+
+const TestContract = artifacts.require("TestContract");
 
 contract("ClaimManager", async (accounts) => {
     let identity, otherIdentity, addr, keys;
@@ -9,20 +12,20 @@ contract("ClaimManager", async (accounts) => {
 
     const assertClaim = async (_topic, _issuer, _signature, _data, _uri) => {
         let claimId = await identity.getClaimId(_issuer, _topic);
-        const [topic, scheme, issuer, signature, data, uri] = await identity.getClaim(claimId);
+        const {topic, scheme, issuer, signature, data, uri} = await identity.getClaim(claimId);
 
-        topic.should.be.bignumber.equal(_topic);
-        scheme.should.be.bignumber.equal(Scheme.ECDSA);
+        expect(topic).to.be.bignumber.equal(_topic.toString());
+        expect(scheme).to.be.bignumber.equal(Scheme.ECDSA.toString());
         assert.equal(issuer, _issuer);
         assert.equal(signature, _signature);
-        assert.equal(web3.toAscii(data), _data);
+        assert.equal(data, _data);
         assert.equal(uri, _uri);
     }
 
     const assertClaims = async (_total, _types) => {
         // Check total
         let total = await identity.numClaims();
-        total.should.be.bignumber.equal(_total);
+        expect(total).to.be.bignumber.equal(_total.toString());
 
         // Check per type
         for (let type of Object.keys(_types)) {
@@ -48,83 +51,82 @@ contract("ClaimManager", async (accounts) => {
         ));
     });
 
-    describe("ERC165", () => {
-        it("supports ERC165, ERC725, ERC735", async () => {
-            // ERC165
-            assert.isFalse(await identity.supportsInterface("0xffffffff"));
-            assert.isTrue(await identity.supportsInterface("0x01ffc9a7"));
-            // ERC725
-            assert.isTrue(await identity.supportsInterface("0xdc3d2a7b"));
-            // ERC735
-            assert.isTrue(await identity.supportsInterface("0x10765379"));
-            // ERC725 + ERC735
-            assert.isTrue(await identity.supportsInterface("0xcc4b7902"));
-        });
-    })
-
     describe("addClaim", () => {
         it("can recover signature", async () => {
-            let label = "test";
-            // Claim hash
+            let label = web3.utils.utf8ToHex("test");
+            // Claim hash (contract)
             let toSign = await identity.claimToSign(identity.address, Topic.LABEL, label);
+            // Claim hash (web3)
+            let web3ToSign = web3.utils.soliditySha3(
+                {t: 'address', v: identity.address},
+                {t: 'uint256', v: Topic.LABEL},
+                {t: 'bytes', v: label}
+            );
+            assert.equal(toSign, web3ToSign);
             // Sign using eth_sign
-            let signature = web3.eth.sign(addr.manager[0], toSign);
-            // Recover address from signature
-            let signedBy = await identity.getSignatureAddress(toSign, signature);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.manager[0]));
+            // Recover address from signature (web3)
+            let signedBy = await web3.eth.accounts.recover(toSign, signature);
+            assert.equal(signedBy, addr.manager[0]);
+            // Recover address from signature (contract)
+            signedBy = await identity.getSignatureAddress(toSign, signature);
             assert.equal(signedBy, addr.manager[0]);
         });
 
         it("can add self-claim as manager", async () => {
             let uri = "https://twitter.com/mirceap";
+            let label = web3.utils.utf8ToHex(uri);
             // Claim hash
-            let toSign = await identity.claimToSign(identity.address, Topic.PROFILE, uri);
+            let toSign = await identity.claimToSign(identity.address, Topic.PROFILE, label);
             // Sign using CLAIM_SIGNER_KEY
-            let signature = web3.eth.sign(addr.claim[0], toSign);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.claim[0]));
 
             // Add self-claim as manager
-            await assertOkTx(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, signature, uri, uri, {from: addr.manager[0]}));
+            await assertOkTx(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, signature, label, uri, {from: addr.manager[0]}));
 
             // Check claim
-            await assertClaim(Topic.PROFILE, identity.address, signature, uri, uri);
+            await assertClaim(Topic.PROFILE, identity.address, signature, label, uri);
 
             await assertClaims(3, {[Topic.LABEL]: 2, [Topic.PROFILE]: 1});
         });
 
         it("checks signature when adding", async () => {
             let uri = "https://twitter.com/mirceap";
+            let label = web3.utils.utf8ToHex(uri);
             // Claim hash
-            let toSign = await identity.claimToSign(identity.address, Topic.PROFILE, uri);
+            let toSign = await identity.claimToSign(identity.address, Topic.PROFILE, label);
             // Don't sign, create random string
-            let invalidSignature = web3.sha3(toSign);
+            let invalidSignature = web3.utils.sha3(toSign);
 
             // Try to add self-claim as manager
-            await assertRevert(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, invalidSignature, uri, uri, {from: addr.manager[0]}));
+            await shouldFail(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, invalidSignature, label, uri, {from: addr.manager[0]}));
 
             // Claim doesn't exist
             let claimId = await identity.getClaimId(identity.address, Topic.PROFILE);
-            await assertRevert(identity.getClaim(claimId));
+            await shouldFail(identity.getClaim(claimId));
         });
 
         it("can add self-claim with manager approval", async () => {
             // Claim hash
             let uri = "https://twitter.com/mirceap";
-            let toSign = await identity.claimToSign(identity.address, Topic.PROFILE, uri);
+            let label = web3.utils.utf8ToHex(uri);
+            let toSign = await identity.claimToSign(identity.address, Topic.PROFILE, label);
             // Sign using CLAIM_SIGNER_KEY
-            let signature = web3.eth.sign(addr.claim[0], toSign);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.claim[0]));
 
             // Add self-claim with claim key
-            let r = await assertOkTx(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, signature, uri, uri, {from: addr.claim[0]}));
+            let r = await assertOkTx(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, signature, label, uri, {from: addr.claim[0]}));
             let claimRequestId = findClaimRequestId(r);
 
             // Claim doesn't exist yet
             let claimId = await identity.getClaimId(identity.address, Topic.PROFILE);
-            await assertRevert(identity.getClaim(claimId));
+            await shouldFail(identity.getClaim(claimId));
 
             // Approve
             await assertOkTx(identity.approve(claimRequestId, true, {from: addr.manager[0]}));
 
             // Check claim
-            await assertClaim(Topic.PROFILE, identity.address, signature, uri, uri);
+            await assertClaim(Topic.PROFILE, identity.address, signature, label, uri);
 
             await assertClaims(3, {[Topic.LABEL]: 2, [Topic.PROFILE]: 1});
         });
@@ -132,12 +134,13 @@ contract("ClaimManager", async (accounts) => {
         it("other identity can add a claim", async () => {
             // Claim hash
             let uri = "https://twitter.com/mirceap";
-            let toSign = await otherIdentity.claimToSign(identity.address, Topic.PROFILE, uri);
-            let signature = web3.eth.sign(addr.other, toSign);
+            let label = web3.utils.utf8ToHex(uri);
+            let toSign = await otherIdentity.claimToSign(identity.address, Topic.PROFILE, label);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.other));
 
             // Deployer calls deployedContract.execute(...), which calls identity.addClaim(...)
-            let data = identity.contract.addClaim.getData(Topic.PROFILE, Scheme.ECDSA, otherIdentity.address, signature, uri, uri);
-            let r = await assertOkTx(otherIdentity.execute(identity.address, 0, data, {from: addr.other}));
+            let executeData = identity.contract.methods.addClaim(Topic.PROFILE, Scheme.ECDSA, otherIdentity.address, signature, label, uri).encodeABI();
+            let r = await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
             let claimRequestId = findClaimRequestId(r);
 
             // Claim doesn't exist yet
@@ -147,21 +150,21 @@ contract("ClaimManager", async (accounts) => {
             await assertOkTx(identity.approve(claimRequestId, true, {from: addr.manager[0]}));
 
             // Check claim
-            await assertClaim(Topic.PROFILE, otherIdentity.address, signature, uri, uri);
+            await assertClaim(Topic.PROFILE, otherIdentity.address, signature, label, uri);
             await assertClaims(3, {[Topic.LABEL]: 2, [Topic.PROFILE]: 1});
         });
     });
 
     describe("changeClaim", () => {
         it("can update a self-claim", async () => {
-            let label = "Mircea Pasoi";
+            let label = web3.utils.utf8ToHex("Mircea Pasoi");
             let uri = "http://mirceapasoi.com";
             let newUri = "https://twitter.com/mirceap";
 
             // Claim hash
             let toSign = await identity.claimToSign(identity.address, Topic.LABEL, label);
             // Sign using CLAIM_SIGNER_KEY
-            let signature = web3.eth.sign(addr.claim[0], toSign);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.claim[0]));
             // Check claim exists
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
 
@@ -175,32 +178,32 @@ contract("ClaimManager", async (accounts) => {
         });
 
         it("checks signature when updating", async () => {
-            let label = "Mircea Pasoi";
+            let label = web3.utils.utf8ToHex("Mircea Pasoi");
             let uri = "http://mirceapasoi.com";
             let newUri = "https://twitter.com/mirceap";
 
             // Claim hash
             let toSign = await identity.claimToSign(identity.address, Topic.LABEL, label);
             // Don't sign, create random string
-            let signature = web3.eth.sign(addr.claim[0], toSign);
-            let invalidSignature = web3.sha3(toSign);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.claim[0]));
+            let invalidSignature = web3.utils.sha3(toSign);
 
             // Try to update self-claim as manager
-            await assertRevert(identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, invalidSignature, label, newUri, {from: addr.manager[1]}));
+            await shouldFail(identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, invalidSignature, label, newUri, {from: addr.manager[1]}));
 
             // Claim is unchanged
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
         });
 
         it("needs approval to update a self-claim", async () => {
-            let label = "Mircea Pasoi";
+            let label = web3.utils.utf8ToHex("Mircea Pasoi");
             let uri = "http://mirceapasoi.com";
             let newUri = "https://twitter.com/mirceap";
 
             // Claim hash
             let toSign = await identity.claimToSign(identity.address, Topic.LABEL, label);
             // Sign using CLAIM_SIGNER_KEY
-            let signature = web3.eth.sign(addr.claim[0], toSign);
+            let signature = fixSignature(await web3.eth.sign(toSign, addr.claim[0]));
             // Check claim
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
 
@@ -223,23 +226,22 @@ contract("ClaimManager", async (accounts) => {
         it("other identity can update a claim", async () => {
             let claimId = await identity.getClaimId(otherIdentity.address, Topic.LABEL);
             // Use same signature as before, but update uri
-            let [, , , signature, label, uri] = await identity.getClaim(claimId);
-            label = web3.toAscii(label);
+            const {topic, scheme, issuer, signature, data, uri} = await identity.getClaim(claimId);
             let newUri = "https://twitter.com/mirceap";
 
             // Deployer calls deployedContract.execute(...), which calls identity.addClaim(...)
-            let data = identity.contract.addClaim.getData(Topic.LABEL, Scheme.ECDSA, otherIdentity.address, signature, label, newUri);
-            let r = await assertOkTx(otherIdentity.execute(identity.address, 0, data, {from: addr.other}));
+            let executeData = identity.contract.methods.addClaim(Topic.LABEL, Scheme.ECDSA, otherIdentity.address, signature, data, newUri).encodeABI();
+            let r = await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
             let claimRequestId = findClaimRequestId(r);
 
             // Claim hasn't been updated yet
-            await assertClaim(Topic.LABEL, otherIdentity.address, signature, label, uri);
+            await assertClaim(Topic.LABEL, otherIdentity.address, signature, data, uri);
 
             // Approve
             await assertOkTx(identity.approve(claimRequestId, true, {from: addr.manager[0]}));
 
             // Check claim
-            await assertClaim(Topic.LABEL, otherIdentity.address, signature, label, newUri);
+            await assertClaim(Topic.LABEL, otherIdentity.address, signature, data, newUri);
             await assertClaims(2, {[Topic.LABEL]: 2});
         });
     })
@@ -253,7 +255,7 @@ contract("ClaimManager", async (accounts) => {
             await assertOkTx(identity.removeClaim(claimId, {from: addr.manager[0]}));
 
             // Check claim no longer exists
-            await assertRevert(identity.getClaim(claimId));
+            await shouldFail(identity.getClaim(claimId));
 
             await assertClaims(1, {[Topic.LABEL]: 1});
         });
@@ -263,11 +265,11 @@ contract("ClaimManager", async (accounts) => {
             let claimId = await identity.getClaimId(otherIdentity.address, Topic.LABEL);
 
             // Remove claim as contract
-            let data = identity.contract.removeClaim.getData(claimId);
-            await assertOkTx(otherIdentity.execute(identity.address, 0, data, {from: addr.other}));
+            let executeData = identity.contract.methods.removeClaim(claimId).encodeABI();
+            await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
 
             // Check claim no longer exists
-            await assertRevert(identity.getClaim(claimId));
+            await shouldFail(identity.getClaim(claimId));
 
             await assertClaims(1, {[Topic.LABEL]: 1});
         })
@@ -281,7 +283,7 @@ contract("ClaimManager", async (accounts) => {
             await assertOkTx(identity.removeClaim(claimId, {from: addr.other}));
 
             // Check claim no longer exists
-            await assertRevert(identity.getClaim(claimId));
+            await shouldFail(identity.getClaim(claimId));
 
             await assertClaims(1, {[Topic.LABEL]: 1});
         });
@@ -311,11 +313,11 @@ contract("ClaimManager", async (accounts) => {
             let otherId = await identity.getClaimId(otherIdentity.address, Topic.LABEL);
 
             // Refresh self-claim as contract
-            let data = identity.contract.refreshClaim.getData(selfId);
-            await assertOkTx(identity.execute(identity.address, 0, data, {from: addr.manager[1]}));
+            let executeData = identity.contract.methods.refreshClaim(selfId).encodeABI();
+            await assertOkTx(identity.execute(identity.address, 0, executeData, {from: addr.manager[1]}));
             // Refresh other claim as other contract
-            data = identity.contract.refreshClaim.getData(otherId);
-            await assertOkTx(otherIdentity.execute(identity.address, 0, data, {from: addr.other}));
+            executeData = identity.contract.methods.refreshClaim(otherId).encodeABI();
+            await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
 
             // Claims no longer there
             await assertClaims(0, {[Topic.LABEL]: 0});

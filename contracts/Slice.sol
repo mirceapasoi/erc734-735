@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.5.7;
 
 /// @title Slice
 /// @author https://github.com/nick
@@ -10,13 +10,13 @@ library Slice {
     /// @param length Length of slice
     /// @return Sliced bytes array
     function slice(
-        bytes self,
+        bytes memory self,
         uint256 offset,
         uint8 length
     )
         internal
         pure
-        returns (bytes)
+        returns (bytes memory)
     {
         bytes memory s = new bytes(length);
         uint256 i = 0;
@@ -31,13 +31,13 @@ library Slice {
     /// @param length Length of slice
     /// @return Sliced string
     function slice(
-        string self,
+        string memory self,
         uint256 offset,
         uint8 length
     )
         internal
         pure
-        returns (string)
+        returns (string memory)
     {
         return string(slice(bytes(self), offset, length));
     }

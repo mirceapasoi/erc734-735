@@ -1,4 +1,5 @@
-import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
+import { shouldFail } from 'openzeppelin-test-helpers';
+import { expect } from 'chai';
 import { setupTest, assertKeyCount, Purpose, KeyType } from './base';
 import { printTestGas, assertOkTx } from './util';
 
@@ -23,21 +24,21 @@ contract("KeyManager", async (accounts) => {
             await assertKeyCount(identity, Purpose.ACTION, 3);
 
             let total = await identity.numKeys();
-            total.should.be.bignumber.equal(5);
+            expect(total).to.be.bignumber.equal('5');
         });
 
         it ("should add only for management keys", async () => {
             // Start with 2
             await assertKeyCount(identity, Purpose.ACTION, 2);
 
-            await assertRevert(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[0]}));
-            await assertRevert(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[1]}));
+            await shouldFail(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[0]}));
+            await shouldFail(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[1]}));
 
             // End with 2
             await assertKeyCount(identity, Purpose.ACTION, 2);
 
             let total = await identity.numKeys();
-            total.should.be.bignumber.equal(4);
+            expect(total).to.be.bignumber.equal('4');
         });
 
         it("should add multi-purpose keys", async () => {
@@ -53,7 +54,7 @@ contract("KeyManager", async (accounts) => {
             await assertKeyCount(identity, Purpose.ACTION, 3);
 
             let total = await identity.numKeys();
-            total.should.be.bignumber.equal(6);
+            expect(total).to.be.bignumber.equal('6');
         });
     });
 
@@ -84,9 +85,9 @@ contract("KeyManager", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 0);
 
             // Storage is clean
-            let [purposes, keyType, key] = await identity.getKey(keys.action[0]);
-            keyType.should.be.bignumber.equal(0);
-            key.should.be.bignumber.equal(0);
+            let {purposes, keyType, key} = await identity.getKey(keys.action[0]);
+            expect(keyType).to.be.bignumber.equal('0');
+            assert.equal(key, '0x' + '0'.repeat(64));
             assert.equal(purposes.length, 0);
         });
 
@@ -103,21 +104,21 @@ contract("KeyManager", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 0);
 
             let total = await identity.numKeys();
-            total.should.be.bignumber.equal(2);
+            expect(total).to.be.bignumber.equal('2');
         });
 
         it("should remove only for management keys", async () => {
             // Start with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
 
-            await assertRevert(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
-            await assertRevert(identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.action[1]}));
+            await shouldFail(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
+            await shouldFail(identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.action[1]}));
 
             // End with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
 
             let total = await identity.numKeys();
-            total.should.be.bignumber.equal(4);
+            expect(total).to.be.bignumber.equal('4');
         });
 
         it ("should ignore keys that don't exist", async () => {
@@ -128,7 +129,7 @@ contract("KeyManager", async (accounts) => {
             await assertOkTx(identity.removeKey(keys.encrypt[0], Purpose.ENCRYPT, {from: addr.manager[0]}));
 
             let total = await identity.numKeys();
-            total.should.be.bignumber.equal(4);
+            expect(total).to.be.bignumber.equal('4');
         });
     });
 

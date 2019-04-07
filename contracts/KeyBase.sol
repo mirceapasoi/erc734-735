@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 import "./KeyStore.sol";
 
@@ -35,7 +35,7 @@ contract KeyBase {
         pure
         returns (bytes32)
     {
-        return bytes32(addr);
+        return bytes32(uint256(addr));
     }
 
     /// @dev Checks if sender is either the identity contract or a MANAGEMENT_KEY
@@ -51,13 +51,13 @@ contract KeyBase {
             return true;
         }
         // Only works with 1 key threshold, otherwise need multi-sig
-        require(managementThreshold == 1);
+        require(managementThreshold == 1, "management threshold >1");
         return allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY);
     }
 
     /// @dev Modifier that only allows keys of purpose 1, or the identity itself
     modifier onlyManagementOrSelf {
-        require(_managementOrSelf());
+        require(_managementOrSelf(), "only management or self");
         _;
     }
 }

@@ -1,5 +1,5 @@
-import assertRevert from 'zeppelin-solidity/test/helpers/assertRevert';
-import { setupTest, Purpose, KeyType } from './base';
+import { shouldFail } from 'openzeppelin-test-helpers';
+import { setupTest } from './base';
 import { assertOkTx, printTestGas } from './util';
 
 contract("Destructible", async (accounts) => {
@@ -12,12 +12,12 @@ contract("Destructible", async (accounts) => {
     })
 
     it("should be killed by management keys", async () => {
-        assert.notEqual(web3.eth.getCode(identity.address), "0x0");
+        assert.notEqual(await web3.eth.getCode(identity.address), "0x");
         await assertOkTx(identity.destroyAndSend(addr.manager[0], {from: addr.manager[1]}));
-        assert.strictEqual(web3.eth.getCode(identity.address), "0x0");
+        assert.strictEqual(await web3.eth.getCode(identity.address), "0x");
     });
 
     it("should not be killed by others", async () => {
-        await assertRevert(identity.destroyAndSend(addr.action[0], {from: addr.action[0]}));
+        await shouldFail(identity.destroyAndSend(addr.action[0], {from: addr.action[0]}));
     });
 });

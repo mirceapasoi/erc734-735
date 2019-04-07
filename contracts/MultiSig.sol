@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 import "./Pausable.sol";
 import "./ERC725.sol";
@@ -29,7 +29,7 @@ contract MultiSig is Pausable, ERC725 {
     function execute(
         address _to,
         uint256 _value,
-        bytes _data
+        bytes memory _data
     )
         public
         whenNotPaused
@@ -43,17 +43,17 @@ contract MultiSig is Pausable, ERC725 {
                 threshold = managementThreshold;
             } else {
                 // Only management keys can operate on this contract
-                require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY));
+                require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for execute");
                 threshold = managementThreshold - 1;
             }
         } else {
-            require(_to != address(0));
+            require(_to != address(0), "null execute to");
             if (msg.sender == address(this)) {
                 // Contract calling itself to act on other address
                 threshold = actionThreshold;
             } else {
                 // Action keys can operate on other addresses
-                require(allKeys.find(addrToKey(msg.sender), ACTION_KEY));
+                require(allKeys.find(addrToKey(msg.sender), ACTION_KEY), "need action key for execute");
                 threshold = actionThreshold - 1;
             }
         }
@@ -89,16 +89,16 @@ contract MultiSig is Pausable, ERC725 {
         whenNotPaused
         returns (bool success)
     {
-        require(_id != 0);
+        require(_id != 0, "null execution ID");
         Execution storage e = execution[_id];
         // Must exist
-        require(e.to != 0);
+        require(e.to != address(0), "null approve to");
 
         // Must be approved with the right key
         if (e.to == address(this)) {
-            require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY));
+            require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for approve");
         } else {
-            require(allKeys.find(addrToKey(msg.sender), ACTION_KEY));
+            require(allKeys.find(addrToKey(msg.sender), ACTION_KEY), "need action key for approve");
         }
 
         emit Approved(_id, _approve);
@@ -119,8 +119,8 @@ contract MultiSig is Pausable, ERC725 {
             return false;
         } else {
             // Only approve once
-            for (i = 0; i < approvals.length; i++) {
-                require(approvals[i] != msg.sender);
+            for (uint i = 0; i < approvals.length; i++) {
+                require(approvals[i] != msg.sender, "already approved");
             }
 
             // Approve
@@ -142,10 +142,10 @@ contract MultiSig is Pausable, ERC725 {
         whenNotPaused
         onlyManagementOrSelf
     {
-        require(threshold > 0);
+        require(threshold > 0, "management threshold too low");
         // Don't lock yourself out
         uint numManagementKeys = getKeysByPurpose(MANAGEMENT_KEY).length;
-        require(threshold <= numManagementKeys);
+        require(threshold <= numManagementKeys, "management threshold too high");
         managementThreshold = threshold;
     }
 
@@ -156,10 +156,10 @@ contract MultiSig is Pausable, ERC725 {
         whenNotPaused
         onlyManagementOrSelf
     {
-        require(threshold > 0);
+        require(threshold > 0, "action threshold too low");
         // Don't lock yourself out
         uint numActionKeys = getKeysByPurpose(ACTION_KEY).length;
-        require(threshold <= numActionKeys);
+        require(threshold <= numActionKeys, "action threshold too high");
         actionThreshold = threshold;
     }
 
@@ -174,7 +174,7 @@ contract MultiSig is Pausable, ERC725 {
         address self,
         address _to,
         uint256 _value,
-        bytes _data,
+        bytes memory _data,
         uint _nonce
     )
         private
@@ -191,18 +191,18 @@ contract MultiSig is Pausable, ERC725 {
     /// @return `true` if the execution succeeded, `false` otherwise
     function _execute(
         uint256 _id,
-        Execution e,
+        Execution memory e,
         bool clean
     )
         private
         returns (bool)
     {
         // Must exist
-        require(e.to != 0);
+        require(e.to != address(0), "null execute to");
         // Call
         // TODO: Should we also support DelegateCall and Create (new contract)?
         // solhint-disable-next-line avoid-call-value
-        bool success = e.to.call.value(e.value)(e.data);
+        (bool success, ) = e.to.call.value(e.value)(e.data);
         if (!success) {
             emit ExecutionFailed(_id, e.to, e.value, e.data);
             return false;

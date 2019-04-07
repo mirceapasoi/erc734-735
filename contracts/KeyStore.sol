@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 /// @title KeyStorage
 /// @author Mircea Pasoi
@@ -32,8 +32,7 @@ library KeyStore {
         }
         for (uint i = 0; i < k.purposes.length; i++) {
             if (k.purposes[i] == purpose) {
-                found = true;
-                return;
+                return true;
             }
         }
     }
@@ -83,7 +82,7 @@ library KeyStore {
 
         // Delete key from keysByPurpose
         bytes32[] storage k = self.keysByPurpose[purpose];
-        for (i = 0; i < k.length; i++) {
+        for (uint i = 0; i < k.length; i++) {
             if (k[i] == key) {
                 k[i] = k[k.length - 1];
                 delete k[k.length - 1];

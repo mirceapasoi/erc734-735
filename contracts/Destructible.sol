@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 import "./KeyBase.sol";
 
@@ -14,7 +14,7 @@ contract Destructible is KeyBase {
         public
         onlyManagementOrSelf
     {
-        require(_recipient != address(0));
-        selfdestruct(_recipient);
+        require(_recipient != address(0), "recipient must exist");
+        selfdestruct(address(uint160(_recipient)));
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
 import "./Destructible.sol";
 import "./ERC735.sol";
@@ -30,17 +30,17 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
     constructor
     (
-        bytes32[] _keys,
-        uint256[] _purposes,
+        bytes32[] memory _keys,
+        uint256[] memory _purposes,
         uint256 _managementThreshold,
         uint256 _actionThreshold,
-        address[] _issuers,
-        uint256[] _topics,
+        address[] memory _issuers,
+        uint256[] memory _topics,
         // TODO: Pass bytes[] signatures, bytes[] data and string[] uris once ABIEncoderV2 is out
-        bytes _signatures,
-        bytes _datas,
-        string _uris,
-        uint8[] _sizes
+        bytes memory _signatures,
+        bytes memory _datas,
+        string memory _uris,
+        uint8[] memory _sizes
     )
     public {
         _validateKeys(_keys, _purposes);
@@ -63,20 +63,20 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _purposes Key purposes (in the same order as _keys)
     function _validateKeys
     (
-        bytes32[] _keys,
-        uint256[] _purposes
+        bytes32[] memory _keys,
+        uint256[] memory _purposes
     )
     private
     pure
     {
         // Validate keys are sorted and unique
-        require(_keys.length == _purposes.length);
+        require(_keys.length == _purposes.length, "keys length != purposes length");
         for (uint i = 1; i < _keys.length; i++) {
             // Expect input to be in sorted order, first by keys, then by purposes
             // Sorted order guarantees (key, purpose) pairs are unique and we can use
             // _addKey insteaad of addKey (which also checks for existance)
             bytes32 prevKey = _keys[i - 1];
-            require(_keys[i] > prevKey || (_keys[i] == prevKey && _purposes[i] > _purposes[i - 1]));
+            require(_keys[i] > prevKey || (_keys[i] == prevKey && _purposes[i] > _purposes[i - 1]), "keys not sorted");
         }
     }
 
@@ -87,8 +87,8 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _actionThreshold Multi-sig threshold for ACTION_KEY
     function _addKeys
     (
-        bytes32[] _keys,
-        uint256[] _purposes,
+        bytes32[] memory _keys,
+        uint256[] memory _purposes,
         uint256 _managementThreshold,
         uint256 _actionThreshold
     )
@@ -117,10 +117,10 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
             }
         }
 
-        require(_managementThreshold > 0);
-        require(_managementThreshold <= managementCount);
-        require(_actionThreshold > 0);
-        require(_actionThreshold <= actionCount);
+        require(_managementThreshold > 0, "management threshold too low");
+        require(_managementThreshold <= managementCount, "management threshold too high");
+        require(_actionThreshold > 0, "action threshold too low");
+        require(_actionThreshold <= actionCount, "action threshold too high");
         managementThreshold = _managementThreshold;
         actionThreshold = _actionThreshold;
     }
@@ -131,21 +131,21 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
     function _validateClaims
     (
-        address[] _issuers,
-        uint256[] _topics,
-        uint8[] _sizes
+        address[] memory _issuers,
+        uint256[] memory _topics,
+        uint8[] memory _sizes
     )
     private
     pure
     {
         // Validate claims are sorted and unique
-        require(_issuers.length == _topics.length);
-        require(3 * _topics.length == _sizes.length);
+        require(_issuers.length == _topics.length, "issuers length != topics length");
+        require(3 * _topics.length == _sizes.length, "topics length != sizes length");
         for (uint i = 1; i < _issuers.length; i++) {
             // Expect input to be in sorted order, first by issuer, then by topic
             // Sorted order guarantees (issuer, topic) pairs are unique
             address prevIssuer = _issuers[i - 1];
-            require(_issuers[i] != prevIssuer || (_issuers[i] == prevIssuer && _topics[i] > _topics[i - 1]));
+            require(_issuers[i] != prevIssuer || (_issuers[i] == prevIssuer && _topics[i] > _topics[i - 1]), "issuers not sorted");
         }
     }
 
@@ -158,12 +158,12 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _sizes Triples of signature, claim data, URI sizes (each must be ≤ 256)
     function _addClaims
     (
-        address[] _issuers,
-        uint256[] _topics,
-        bytes _signatures,
-        bytes _datas,
-        string _uris,
-        uint8[] _sizes
+        address[] memory _issuers,
+        uint256[] memory _topics,
+        bytes memory _signatures,
+        bytes memory _datas,
+        string memory _uris,
+        uint8[] memory _sizes
     )
     private
     {
@@ -175,7 +175,7 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
             // Check signature
             signature = _signatures.slice(offset[0], _sizes[3 * i]);
             data = _datas.slice(offset[1], _sizes[3 * i + 1]);
-            require(_validSignature(_topics[i], ECDSA_SCHEME, _issuers[i], signature, data));
+            require(_validSignature(_topics[i], ECDSA_SCHEME, _issuers[i], signature, data), "addClaims signature invalid");
             // Add claim
             _addClaim(
                 getClaimId(_issuers[i], _topics[i]),

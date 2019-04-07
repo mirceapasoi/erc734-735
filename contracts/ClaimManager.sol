@@ -1,6 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.7;
 
-import "../node_modules/zeppelin-solidity/contracts/ECRecovery.sol";
+import "../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "./Pausable.sol";
 import "./ERC725.sol";
 import "./ERC735.sol";
@@ -12,7 +12,7 @@ import "./ERC165Query.sol";
 /// @dev  Key data is stored using KeyStore library. Inheriting ERC725 for the getters
 
 contract ClaimManager is Pausable, ERC725, ERC735 {
-    using ECRecovery for bytes32;
+    using ECDSA for bytes32;
     using ERC165Query for address;
 
     bytes constant internal ETH_PREFIX = "\x19Ethereum Signed Message:\n32";
@@ -43,16 +43,16 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         uint256 _topic,
         uint256 _scheme,
         address issuer,
-        bytes _signature,
-        bytes _data,
-        string _uri
+        bytes memory  _signature,
+        bytes memory _data,
+        string memory _uri
     )
         public
         whenNotPaused
         returns (uint256 claimRequestId)
     {
         // Check signature
-        require(_validSignature(_topic, _scheme, issuer, _signature, _data));
+        require(_validSignature(_topic, _scheme, issuer, _signature, _data), "addClaim invalid signature");
         // Check we can perform action
         bool noApproval = _managementOrSelf();
 
@@ -60,7 +60,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
             // SHOULD be approved or rejected by n of m approve calls from keys of purpose 1
             claimRequestId = this.execute(address(this), 0, msg.data);
             emit ClaimRequested(claimRequestId, _topic, _scheme, issuer, _signature, _data, _uri);
-            return;
+            return claimRequestId;
         }
 
         bytes32 claimId = getClaimId(issuer, _topic);
@@ -90,7 +90,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     {
         Claim memory c = claims[_claimId];
         // Must exist
-        require(c.issuer != address(0));
+        require(c.issuer != address(0), "issuer must exist");
         // Remove from mapping
         delete claims[_claimId];
         // Remove from type array
@@ -119,13 +119,13 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         uint256 topic,
         uint256 scheme,
         address issuer,
-        bytes signature,
-        bytes data,
-        string uri
+        bytes memory signature,
+        bytes memory data,
+        string memory uri
         )
     {
         Claim memory c = claims[_claimId];
-        require(c.issuer != address(0));
+        require(c.issuer != address(0), "issuer must exist");
         topic = c.topic;
         scheme = c.scheme;
         issuer = c.issuer;
@@ -140,7 +140,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     function getClaimIdsByType(uint256 _topic)
         public
         view
-        returns(bytes32[] claimIds)
+        returns(bytes32[] memory claimIds)
     {
         claimIds = claimsByTopic[_topic];
     }
@@ -156,7 +156,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     {
         // Must exist
         Claim memory c = claims[_claimId];
-        require(c.issuer != address(0));
+        require(c.issuer != address(0), "issuer must exist");
         // Check claim is still valid
         if (!_validSignature(c.topic, c.scheme, c.issuer, c.signature, c.data)) {
             // Remove claim
@@ -187,7 +187,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     /// @param topic Claim topic
     /// @param data Data for the claim
     /// @return Hash to be signed by claim issuer
-    function claimToSign(address subject, uint256 topic, bytes data)
+    function claimToSign(address subject, uint256 topic, bytes memory data)
         public
         pure
         returns (bytes32)
@@ -199,7 +199,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     /// @param toSign Hash to be signed, potentially generated with `claimToSign`
     /// @param signature Signature data i.e. signed hash
     /// @return address recovered from `signature` which signed the `toSign` hash
-    function getSignatureAddress(bytes32 toSign, bytes signature)
+    function getSignatureAddress(bytes32 toSign, bytes memory signature)
         public
         pure
         returns (address)
@@ -218,8 +218,8 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         uint256 _topic,
         uint256 _scheme,
         address issuer,
-        bytes _signature,
-        bytes _data
+        bytes memory _signature,
+        bytes memory _data
     )
         internal
         view
@@ -233,12 +233,13 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
             } else
             if (issuer == address(this)) {
                 return allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
-            } else
-            if (issuer.doesContractImplementInterface(ERC725ID())) {
-                // Issuer is an Identity contract
-                // It should hold the key with which the above message was signed.
-                // If the key is not present anymore, the claim SHOULD be treated as invalid.
-                return ERC725(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+            } else {
+                if (issuer.doesContractImplementInterface(ERC725ID())) {
+                    // Issuer is an Identity contract
+                    // It should hold the key with which the above message was signed.
+                    // If the key is not present anymore, the claim SHOULD be treated as invalid.
+                    return ERC725(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+                }
             }
             // Invalid
             return false;
@@ -252,7 +253,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     modifier onlyManagementOrSelfOrIssuer(bytes32 _claimId) {
         address issuer = claims[_claimId].issuer;
         // Must exist
-        require(issuer != 0);
+        require(issuer != address(0), "issuer must exist");
 
         // Can perform action on claim
         // solhint-disable-next-line no-empty-blocks
@@ -265,7 +266,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         } else
         if (issuer.doesContractImplementInterface(ERC725ID())) {
             // Issuer is another Identity contract, is this an action key?
-            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY));
+            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY), "issuer contract missing action key");
         } else {
             // Invalid! Sender is NOT Management or Self or Issuer
             revert();
@@ -286,9 +287,9 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         uint256 _topic,
         uint256 _scheme,
         address issuer,
-        bytes _signature,
-        bytes _data,
-        string _uri
+        bytes memory _signature,
+        bytes memory _data,
+        string memory _uri
     )
         internal
     {
@@ -306,7 +307,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     function _updateClaimUri(
         uint256 _topic,
         address issuer,
-        string _uri
+        string memory _uri
     )
     internal
     {
