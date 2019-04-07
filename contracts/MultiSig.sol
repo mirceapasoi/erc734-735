@@ -40,21 +40,21 @@ contract MultiSig is Pausable, ERC725 {
         if (_to == address(this)) {
             if (msg.sender == address(this)) {
                 // Contract calling itself to act on itself
-                threshold = managementThreshold;
+                threshold = managementRequired;
             } else {
                 // Only management keys can operate on this contract
                 require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for execute");
-                threshold = managementThreshold - 1;
+                threshold = managementRequired - 1;
             }
         } else {
             require(_to != address(0), "null execute to");
             if (msg.sender == address(this)) {
                 // Contract calling itself to act on other address
-                threshold = executionThreshold;
+                threshold = executionRequired;
             } else {
                 // Execution keys can operate on other addresses
                 require(allKeys.find(addrToKey(msg.sender), EXECUTION_KEY), "need execution key for execute");
-                threshold = executionThreshold - 1;
+                threshold = executionRequired - 1;
             }
         }
 
@@ -135,32 +135,39 @@ contract MultiSig is Pausable, ERC725 {
         }
     }
 
-    /// @dev Change multi-sig threshold for MANAGEMENT_KEY
-    /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
-    function changeManagementThreshold(uint threshold)
-        public
+    /// @dev Change multi-sig threshold for key purpose
+    /// @param purpose Key purpose to change
+    /// @param number New threshold to change it to (will throw if 0 or larger than available keys)
+    function changeKeysRequired(uint256 purpose, uint256 number)
+        external
         whenNotPaused
         onlyManagementOrSelf
     {
-        require(threshold > 0, "management threshold too low");
+        require(purpose == MANAGEMENT_KEY || purpose == EXECUTION_KEY, "unknown purpose");
+        require(number > 0, "keys required too low");
         // Don't lock yourself out
-        uint numManagementKeys = getKeysByPurpose(MANAGEMENT_KEY).length;
-        require(threshold <= numManagementKeys, "management threshold too high");
-        managementThreshold = threshold;
+        uint numKeys = getKeysByPurpose(purpose).length;
+        require(number <= numKeys, "keys required too high");
+        if (purpose == MANAGEMENT_KEY) {
+            managementRequired = number;
+        } else {
+            executionRequired = number;
+        }
+        emit KeysRequiredChanged(purpose, number);
     }
 
-    /// @dev Change multi-sig threshold for EXECUTION_KEY
-    /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
-    function changeExecutionThreshold(uint threshold)
-        public
-        whenNotPaused
-        onlyManagementOrSelf
+    /// @dev Return multi-sig threshold for key purpose
+    /// @param purpose Key purpose to change
+    function getKeysRequired(uint256 purpose)
+        external
+        view
+        returns(uint256)
     {
-        require(threshold > 0, "execution threshold too low");
-        // Don't lock yourself out
-        uint numActionKeys = getKeysByPurpose(EXECUTION_KEY).length;
-        require(threshold <= numActionKeys, "execution threshold too high");
-        executionThreshold = threshold;
+        require(purpose == MANAGEMENT_KEY || purpose == EXECUTION_KEY, "unknown purpose");
+        if (purpose == MANAGEMENT_KEY) {
+            return managementRequired;
+        }
+        return executionRequired;
     }
 
     /// @dev Generate a unique ID for an execution request

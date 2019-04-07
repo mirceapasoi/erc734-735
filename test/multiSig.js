@@ -89,16 +89,22 @@ contract("MultiSig", async (accounts) => {
     });
 
     describe("multiple signatures", async () => {
+        it("getKeysRequired", async () => {
+            assert.equal(await identity.getKeysRequired(Purpose.MANAGEMENT), 1);
+            assert.equal(await identity.getKeysRequired(Purpose.EXECUTION), 1);
+        });
+
         it("can't overflow threshold", async () => {
-            await shouldFail(identity.changeManagementThreshold(0, {from: addr.manager[0]}));
-            await shouldFail(identity.changeManagementThreshold(10, {from: addr.manager[1]}));
-            await shouldFail(identity.changeActionThreshold(0, {from: addr.manager[0]}));
-            await shouldFail(identity.changeActionThreshold(15, {from: addr.manager[1]}));
+            await shouldFail(identity.changeKeysRequired(Purpose.MANAGEMENT, 0, {from: addr.manager[0]}));
+            await shouldFail(identity.changeKeysRequired(Purpose.MANAGEMENT, 10, {from: addr.manager[1]}));
+            await shouldFail(identity.changeKeysRequired(Purpose.EXECUTION, 0, {from: addr.manager[0]}));
+            await shouldFail(identity.changeKeysRequired(Purpose.EXECUTION, 15, {from: addr.manager[1]}));
         });
 
         it("can't call directly once threshold is set", async () => {
             // One manager increases the threshold
-            await assertOkTx(identity.changeManagementThreshold(2, {from: addr.manager[0]}));
+            await assertOkTx(identity.changeKeysRequired(Purpose.MANAGEMENT, 2, {from: addr.manager[0]}));
+            assert.equal(await identity.getKeysRequired(Purpose.MANAGEMENT), 2);
 
             // Can't call methods directly
             await shouldFail(identity.addKey(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
@@ -107,7 +113,8 @@ contract("MultiSig", async (accounts) => {
 
         it("needs two managers to add a key", async () => {
             // One manager increases the threshold
-            await assertOkTx(identity.changeManagementThreshold(2, {from: addr.manager[0]}));
+            await assertOkTx(identity.changeKeysRequired(Purpose.MANAGEMENT, 2, {from: addr.manager[0]}));
+            assert.equal(await identity.getKeysRequired(Purpose.MANAGEMENT), 2);
 
             // Only 3 managers
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
@@ -144,7 +151,8 @@ contract("MultiSig", async (accounts) => {
 
         it("needs three execution keys to call other", async () => {
             // One manager increases the threshold
-            await assertOkTx(identity.changeActionThreshold(3, {from: addr.manager[1]}));
+            await assertOkTx(identity.changeKeysRequired(Purpose.EXECUTION, 3, {from: addr.manager[1]}));
+            assert.equal(await identity.getKeysRequired(Purpose.EXECUTION), 3);
 
             // No calls yet
             assert.equal(await otherContract.numCalls(identity.address), 0);

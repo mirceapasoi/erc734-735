@@ -38,7 +38,7 @@ export const assertKeyCount = async (identity, purpose, count) => {
 };
 
 // Setup test environment
-export const setupTest = async (accounts, init, total, claims = [], managementThreshold = 1, executionThreshold = 1, blockGasLimit = 10000000) => {
+export const setupTest = async (accounts, init, total, claims = [], managementRequired = 1, executionRequired = 1, blockGasLimit = 10000000) => {
     let totalSum = total.reduce((a, b) => a + b);
     let initSum = init.reduce((a, b) => a + b);
     let addr = {}, keys = {};
@@ -116,8 +116,8 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
         initKeys,
         initPurposes,
         // Thresholds
-        managementThreshold,
-        executionThreshold,
+        managementRequired,
+        executionRequired,
         // Claims
         claims.map(c => c.self ? willDeployAt : otherIdentity.address),
         claims.map(c => c.type),

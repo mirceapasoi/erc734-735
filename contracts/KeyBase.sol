@@ -11,8 +11,8 @@ contract KeyBase {
     uint256 public constant MANAGEMENT_KEY = 1;
 
     // For multi-sig
-    uint256 public managementThreshold = 1;
-    uint256 public executionThreshold = 1;
+    uint256 public managementRequired = 1;
+    uint256 public executionRequired = 1;
 
     // Key storage
     using KeyStore for KeyStore.Keys;
@@ -51,7 +51,7 @@ contract KeyBase {
             return true;
         }
         // Only works with 1 key threshold, otherwise need multi-sig
-        require(managementThreshold == 1, "management threshold >1");
+        require(managementRequired == 1, "management threshold >1");
         return allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY);
     }
 

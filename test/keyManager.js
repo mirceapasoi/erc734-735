@@ -77,11 +77,11 @@ contract("KeyManager", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 1);
 
             // Remove EXECUTION
-            await assertOkTx(identity.removeKey(keys.execution[0], Purpose.EXECUTION, {from: addr.action[0]}));
+            await assertOkTx(identity.removeKey(keys.execution[0], Purpose.EXECUTION, {from: addr.execution[0]}));
             await assertKeyCount(identity, Purpose.EXECUTION, 1);
 
             // Remove EXECUTION as MANAGEMENT
-            await assertOkTx(identity.removeKey(keys.execution[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
+            await assertOkTx(identity.removeKey(keys.execution[0], Purpose.MANAGEMENT, {from: addr.execution[0]}));
             await assertKeyCount(identity, Purpose.MANAGEMENT, 0);
 
             // Storage is clean
@@ -111,8 +111,8 @@ contract("KeyManager", async (accounts) => {
             // Start with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
 
-            await shouldFail(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
-            await shouldFail(identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.action[1]}));
+            await shouldFail(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.execution[0]}));
+            await shouldFail(identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.execution[1]}));
 
             // End with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);

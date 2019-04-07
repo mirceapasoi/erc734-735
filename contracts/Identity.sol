@@ -19,8 +19,8 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _keys Keys to start contract with, in ascending order; in case of equality, purposes must be ascending
     /// @param _purposes Key purposes (in the same order as _keys)
     /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, topics must be ascending
-    /// @param _managementThreshold Multi-sig threshold for MANAGEMENT_KEY
-    /// @param _actionThreshold Multi-sig threshold for EXECUTION_KEY
+    /// @param _managementRequired Multi-sig threshold for MANAGEMENT_KEY
+    /// @param _executionRequired Multi-sig threshold for EXECUTION_KEY
     /// @param _topics Claim topics (in the same order as _issuers)
     /// @param _signatures All the initial claim signatures
     /// @param _datas All the initial claim data
@@ -29,8 +29,8 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     (
         bytes32[] memory _keys,
         uint256[] memory _purposes,
-        uint256 _managementThreshold,
-        uint256 _actionThreshold,
+        uint256 _managementRequired,
+        uint256 _executionRequired,
         address[] memory _issuers,
         uint256[] memory _topics,
         bytes[] memory _signatures,
@@ -41,8 +41,8 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
         _validateKeys(_keys, _purposes);
         _validateClaims(_issuers, _topics);
 
-        _addKeys(_keys, _purposes, _managementThreshold, _actionThreshold);
-        _addClaims(_issuers, _topics, _signatures, _datas, _uris    );
+        _addKeys(_keys, _purposes, _managementRequired, _executionRequired);
+        _addClaims(_issuers, _topics, _signatures, _datas, _uris);
 
         // Supports both ERC 725 & 735
         supportedInterfaces[ERC725ID() ^ ERC735ID()] = true;
@@ -78,14 +78,14 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @dev Add keys to contract and set multi-sig thresholds
     /// @param _keys Keys to start contract with, in ascending order; in case of equality, purposes must be ascending
     /// @param _purposes Key purposes (in the same order as _keys)
-    /// @param _managementThreshold Multi-sig threshold for MANAGEMENT_KEY
-    /// @param _executionThreshold Multi-sig threshold for EXECUTION_KEY
+    /// @param _managementRequired Multi-sig threshold for MANAGEMENT_KEY
+    /// @param _executionRequired Multi-sig threshold for EXECUTION_KEY
     function _addKeys
     (
         bytes32[] memory _keys,
         uint256[] memory _purposes,
-        uint256 _managementThreshold,
-        uint256 _executionThreshold
+        uint256 _managementRequired,
+        uint256 _executionRequired
     )
     private
     {
@@ -112,12 +112,12 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
             }
         }
 
-        require(_managementThreshold > 0, "management threshold too low");
-        require(_managementThreshold <= managementCount, "management threshold too high");
-        require(_executionThreshold > 0, "execution threshold too low");
-        require(_executionThreshold <= executionCount, "execution threshold too high");
-        managementThreshold = _managementThreshold;
-        executionThreshold = _executionThreshold;
+        require(_managementRequired > 0, "management threshold too low");
+        require(_managementRequired <= managementCount, "management threshold too high");
+        require(_executionRequired > 0, "execution threshold too low");
+        require(_executionRequired <= executionCount, "execution threshold too high");
+        managementRequired = _managementRequired;
+        executionRequired = _executionRequired;
     }
 
     /// @dev Validate claims are sorted and unique
