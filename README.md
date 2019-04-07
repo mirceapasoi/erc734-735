@@ -1,6 +1,6 @@
 # ERC 725 + 735
 
-This is an attempt at an implementation of [ERC 725](https://github.com/ethereum/EIPs/issues/725) and [ERC 735](https://github.com/ethereum/EIPs/issues/735), following the specs as closely as possible. It uses the [Truffle framework](http://truffleframework.com/) and [Ganache CLI](https://github.com/trufflesuite/ganache-cli) for testing.
+This is an attempt at an implementation of [ERC 725 v1](https://github.com/ethereum/EIPs/issues/734) and [ERC 735](https://github.com/ethereum/EIPs/issues/735), following the specs as closely as possible. It uses the [Truffle framework](http://truffleframework.com/) and [Ganache CLI](https://github.com/trufflesuite/ganache-cli) for testing.
 
 ## Overview
 
@@ -10,7 +10,7 @@ The smart contract implements the following features:
 2. add/remove keys to identity (`KeyManager.sol`)
 3. get key data, in multiple ways (`KeyGetters.sol`)
 4. "proxy contract" execution on the blockchain (`MultiSig.sol`)
-5. multi-signature mechanism for MANAGEMENT_KEY and ACTION_KEY (`MultiSig.sol`)
+5. multi-signature mechanism for MANAGEMENT_KEY and EXECUTION_KEY (`MultiSig.sol`)
 6. add/remove claims to identity (`ClaimManager.sol`)
 7. get claim data, in multiple ways (`ClaimManager.sol`)
 8. refresh claims in identity (`ClaimManager.sol`)
@@ -71,15 +71,15 @@ $ ganache-cli --allowUnlimitedContractSize -l 10000000
 ...
 $ truffle test
 ...
-    ✓ should be paused/unpaused by management keys (5825603 gas)
-Test: 60,502 gas
-  47 passing (53s)
+  ✓ should be paused/unpaused by management keys (86435 gas)
+	  Test only: 59,944 gas
+
+  54 passing (1m)
 ```
 
 Currently missing unit tests for events being emitted.
 
 ## Open issues
-1. Can't pass an initial set of claims on contract deploy, seems like `ABIEncodeV2` is needed to have `bytes[] signatures, bytes[] data, string[] uris` in the constructor.
 1. `uri` is not included in the signature and could theoretically be changed without changing a claim signature. Is this intentional or not?
 1. Claim IDs are generated using `keccak256(address issuer + uint256 _topic)`, which doesn't work great for self-claims i.e. `issuer` is `address(this)` and we might want multiple self-claims with the same `topic`
 1. Added an `ExecutionFailed` event in `ERC725` which isn't part of the standard
