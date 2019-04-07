@@ -12,7 +12,7 @@ contract KeyBase {
 
     // For multi-sig
     uint256 public managementThreshold = 1;
-    uint256 public actionThreshold = 1;
+    uint256 public executionThreshold = 1;
 
     // Key storage
     using KeyStore for KeyStore.Keys;

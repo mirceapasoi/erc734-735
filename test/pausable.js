@@ -14,11 +14,11 @@ contract("Pausable", async (accounts) => {
     it("should be paused/unpaused by management keys", async () => {
         await assertOkTx(identity.pause({from: addr.manager[0]}));
         // Can't add key
-        await shouldFail(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.manager[0]}));
+        await shouldFail(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.manager[0]}));
         await assertOkTx(identity.unpause({from: addr.manager[1]}));
     });
 
     it("should not be paused by others", async () => {
-        await shouldFail(identity.pause({from: addr.action[0]}));
+        await shouldFail(identity.pause({from: addr.execution[0]}));
     });
 });

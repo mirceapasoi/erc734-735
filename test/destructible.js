@@ -18,6 +18,6 @@ contract("Destructible", async (accounts) => {
     });
 
     it("should not be killed by others", async () => {
-        await shouldFail(identity.destroyAndSend(addr.action[0], {from: addr.action[0]}));
+        await shouldFail(identity.destroyAndSend(addr.execution[0], {from: addr.execution[0]}));
     });
 });

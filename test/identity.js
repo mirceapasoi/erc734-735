@@ -36,8 +36,8 @@ contract("Identity", async (accounts) => {
         // Receive
         await assertOkTx(identity.sendTransaction({from: addr.other, value: oneUnit}));
         let currentBalance = await web3.eth.getBalance(addr.other);
-        // Send back using ACTION key
-        await assertOkTx(identity.execute(addr.other, oneUnit, [], {from: addr.action[0]}));
+        // Send back using EXECUTION key
+        await assertOkTx(identity.execute(addr.other, oneUnit, [], {from: addr.execution[0]}));
         // 0 again
         let balance = await web3.eth.getBalance(identity.address);
         assert.equal(balance, '0');
@@ -50,13 +50,13 @@ contract("Identity", async (accounts) => {
         // You claim to be identity.address, I give you a random string to sign
         let challenge = web3.utils.sha3("random-string");
         // You give me back the signature
-        let signature = fixSignature(await web3.eth.sign(challenge, addr.action[0]));
+        let signature = fixSignature(await web3.eth.sign(challenge, addr.execution[0]));
         // I recover address from signature
         // Using contract helper function here, but any implementation of ECRecover will do
         let signedBy = await identity.getSignatureAddress(challenge, signature);
         let signedByKey = await identity.addrToKey(signedBy);
-        // Check if this is an action key in the identity you claim
-        assert.isTrue(await identity.keyHasPurpose(signedByKey, Purpose.ACTION));
+        // Check if this is an execution key in the identity you claim
+        assert.isTrue(await identity.keyHasPurpose(signedByKey, Purpose.EXECUTION));
         // I now believe you are identity.address so I'll search for a label
         let labels = await identity.getClaimIdsByType(Topic.LABEL);
         assert.isAbove(labels.length, 0);
@@ -70,7 +70,7 @@ contract("Identity", async (accounts) => {
         // Identity contract calls TestContract.whoCalling
         let executeData = test.contract.methods.whoCalling().encodeABI();
         const { tx } = await assertOkTx(
-            identity.execute(test.address, 0, executeData, {from: addr.action[0]})
+            identity.execute(test.address, 0, executeData, {from: addr.execution[0]})
         );
         // Check TestContract events
         await expectEvent.inTransaction(tx, TestContract, 'IdentityCalled', {

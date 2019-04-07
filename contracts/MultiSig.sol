@@ -50,11 +50,11 @@ contract MultiSig is Pausable, ERC725 {
             require(_to != address(0), "null execute to");
             if (msg.sender == address(this)) {
                 // Contract calling itself to act on other address
-                threshold = actionThreshold;
+                threshold = executionThreshold;
             } else {
-                // Action keys can operate on other addresses
-                require(allKeys.find(addrToKey(msg.sender), ACTION_KEY), "need action key for execute");
-                threshold = actionThreshold - 1;
+                // Execution keys can operate on other addresses
+                require(allKeys.find(addrToKey(msg.sender), EXECUTION_KEY), "need execution key for execute");
+                threshold = executionThreshold - 1;
             }
         }
 
@@ -98,7 +98,7 @@ contract MultiSig is Pausable, ERC725 {
         if (e.to == address(this)) {
             require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for approve");
         } else {
-            require(allKeys.find(addrToKey(msg.sender), ACTION_KEY), "need action key for approve");
+            require(allKeys.find(addrToKey(msg.sender), EXECUTION_KEY), "need execution key for approve");
         }
 
         emit Approved(_id, _approve);
@@ -149,18 +149,18 @@ contract MultiSig is Pausable, ERC725 {
         managementThreshold = threshold;
     }
 
-    /// @dev Change multi-sig threshold for ACTION_KEY
+    /// @dev Change multi-sig threshold for EXECUTION_KEY
     /// @param threshold New threshold to change it to (will throw if 0 or larger than available keys)
-    function changeActionThreshold(uint threshold)
+    function changeExecutionThreshold(uint threshold)
         public
         whenNotPaused
         onlyManagementOrSelf
     {
-        require(threshold > 0, "action threshold too low");
+        require(threshold > 0, "execution threshold too low");
         // Don't lock yourself out
-        uint numActionKeys = getKeysByPurpose(ACTION_KEY).length;
-        require(threshold <= numActionKeys, "action threshold too high");
-        actionThreshold = threshold;
+        uint numActionKeys = getKeysByPurpose(EXECUTION_KEY).length;
+        require(threshold <= numActionKeys, "execution threshold too high");
+        executionThreshold = threshold;
     }
 
     /// @dev Generate a unique ID for an execution request

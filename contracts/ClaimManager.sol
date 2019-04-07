@@ -265,8 +265,8 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
             // MUST only be done by the issuer of the claim
         } else
         if (issuer.doesContractImplementInterface(ERC725ID())) {
-            // Issuer is another Identity contract, is this an action key?
-            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), ACTION_KEY), "issuer contract missing action key");
+            // Issuer is another Identity contract, is this an execution key?
+            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), EXECUTION_KEY), "issuer contract missing execution key");
         } else {
             // Invalid! Sender is NOT Management or Self or Issuer
             revert();

@@ -5,7 +5,7 @@ import { getAndClearGas, measureTx, contractAddress, assertBlockGasLimit, fixSig
 // Constants
 export const Purpose = {
     MANAGEMENT: 1,
-    ACTION: 2,
+    EXECUTION: 2,
     CLAIM: 3,
     ENCRYPT: 4
 };
@@ -38,7 +38,7 @@ export const assertKeyCount = async (identity, purpose, count) => {
 };
 
 // Setup test environment
-export const setupTest = async (accounts, init, total, claims = [], managementThreshold = 1, actionThreshold = 1, blockGasLimit = 10000000) => {
+export const setupTest = async (accounts, init, total, claims = [], managementThreshold = 1, executionThreshold = 1, blockGasLimit = 10000000) => {
     let totalSum = total.reduce((a, b) => a + b);
     let initSum = init.reduce((a, b) => a + b);
     let addr = {}, keys = {};
@@ -63,7 +63,7 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
     // Sort by keys (useful for identity constructor)
     accountTuples.sort((a, b) => a[1].localeCompare(b[1]));
     // Put keys in maps
-    const idxToPurpose = ['manager', 'action', 'claim', 'encrypt'];
+    const idxToPurpose = ['manager', 'execution', 'claim', 'encrypt'];
     for (let i = 0, j = 0; i < total.length; i++) {
         // Slice total[i] accounts
         let slice = accountTuples.slice(j, j + total[i]);
@@ -117,7 +117,7 @@ export const setupTest = async (accounts, init, total, claims = [], managementTh
         initPurposes,
         // Thresholds
         managementThreshold,
-        actionThreshold,
+        executionThreshold,
         // Claims
         claims.map(c => c.self ? willDeployAt : otherIdentity.address),
         claims.map(c => c.type),

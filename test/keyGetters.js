@@ -15,12 +15,12 @@ contract("KeyGetters", async (accounts) => {
     describe("keyHasPurpose", async () => {
         it("should return keys that exist", async () => {
             assert.isTrue(await identity.keyHasPurpose(keys.manager[1], Purpose.MANAGEMENT));
-            assert.isTrue(await identity.keyHasPurpose(keys.action[0], Purpose.ACTION));
+            assert.isTrue(await identity.keyHasPurpose(keys.execution[0], Purpose.EXECUTION));
         });
 
         it("should not return keys that don't exist", async () => {
-            assert.isFalse(await identity.keyHasPurpose(keys.manager[0], Purpose.ACTION));
-            assert.isFalse(await identity.keyHasPurpose(keys.action[1], Purpose.MANAGEMENT));
+            assert.isFalse(await identity.keyHasPurpose(keys.manager[0], Purpose.EXECUTION));
+            assert.isFalse(await identity.keyHasPurpose(keys.execution[1], Purpose.MANAGEMENT));
         });
     });
 
@@ -34,12 +34,12 @@ contract("KeyGetters", async (accounts) => {
         });
 
         it("should return multiple purposes", async () => {
-            await assertOkTx(identity.addKey(keys.action[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
-            let {purposes, keyType, key} = await identity.getKey(keys.action[0]);
+            await assertOkTx(identity.addKey(keys.execution[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
+            let {purposes, keyType, key} = await identity.getKey(keys.execution[0]);
             expect(keyType).to.be.bignumber.equal(KeyType.ECDSA.toString());
-            assert.equal(key, keys.action[0]);
+            assert.equal(key, keys.execution[0]);
             assert.equal(purposes.length, 2);
-            expect(purposes[0]).to.be.bignumber.equal(Purpose.ACTION.toString());
+            expect(purposes[0]).to.be.bignumber.equal(Purpose.EXECUTION.toString());
             expect(purposes[1]).to.be.bignumber.equal(Purpose.MANAGEMENT.toString());
         });
 
@@ -59,11 +59,11 @@ contract("KeyGetters", async (accounts) => {
             assert.equal(keys.manager[1], k[1]);
         });
 
-        it("should return all action keys", async () => {
-            let k = await identity.getKeysByPurpose(Purpose.ACTION);
+        it("should return all execution keys", async () => {
+            let k = await identity.getKeysByPurpose(Purpose.EXECUTION);
             assert.equal(k.length, 2);
-            assert.equal(keys.action[0], k[0]);
-            assert.equal(keys.action[1], k[1]);
+            assert.equal(keys.execution[0], k[0]);
+            assert.equal(keys.execution[1], k[1]);
         });
 
         it("should not return keys that haven't been added", async () => {

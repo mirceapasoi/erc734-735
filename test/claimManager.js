@@ -279,7 +279,7 @@ contract("ClaimManager", async (accounts) => {
 
             let claimId = await identity.getClaimId(otherIdentity.address, Topic.LABEL);
 
-            // Remove claim using action key
+            // Remove claim using execution key
             await assertOkTx(identity.removeClaim(claimId, {from: addr.other}));
 
             // Check claim no longer exists
@@ -296,7 +296,7 @@ contract("ClaimManager", async (accounts) => {
 
             // Refresh self claim with manager key
             await assertOkTx(identity.refreshClaim(selfId, {from: addr.manager[1]}));
-            // Refresh other claim with action key
+            // Refresh other claim with execution key
             await assertOkTx(identity.refreshClaim(otherId, {from: addr.other}));
 
             // Claims still there

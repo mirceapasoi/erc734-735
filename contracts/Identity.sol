@@ -15,12 +15,12 @@ import "./ClaimManager.sol";
 
 contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetters {
     /// @dev Constructor for Identity contract. If no initial keys are passed then
-    ///  `msg.sender` is used as an initial MANAGEMENT_KEY, ACTION_KEY and CLAIM_SIGNER_KEY
+    ///  `msg.sender` is used as an initial MANAGEMENT_KEY, EXECUTION_KEY and CLAIM_SIGNER_KEY
     /// @param _keys Keys to start contract with, in ascending order; in case of equality, purposes must be ascending
     /// @param _purposes Key purposes (in the same order as _keys)
     /// @param _issuers Claim issuers to start contract with, in ascending order; in case of equality, topics must be ascending
     /// @param _managementThreshold Multi-sig threshold for MANAGEMENT_KEY
-    /// @param _actionThreshold Multi-sig threshold for ACTION_KEY
+    /// @param _actionThreshold Multi-sig threshold for EXECUTION_KEY
     /// @param _topics Claim topics (in the same order as _issuers)
     /// @param _signatures All the initial claim signatures
     /// @param _datas All the initial claim data
@@ -79,25 +79,25 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
     /// @param _keys Keys to start contract with, in ascending order; in case of equality, purposes must be ascending
     /// @param _purposes Key purposes (in the same order as _keys)
     /// @param _managementThreshold Multi-sig threshold for MANAGEMENT_KEY
-    /// @param _actionThreshold Multi-sig threshold for ACTION_KEY
+    /// @param _executionThreshold Multi-sig threshold for EXECUTION_KEY
     function _addKeys
     (
         bytes32[] memory _keys,
         uint256[] memory _purposes,
         uint256 _managementThreshold,
-        uint256 _actionThreshold
+        uint256 _executionThreshold
     )
     private
     {
-        uint256 actionCount;
+        uint256 executionCount;
         uint256 managementCount;
         if (_keys.length == 0) {
             bytes32 senderKey = addrToKey(msg.sender);
-            // Add key that deployed the contract for MANAGEMENT, ACTION, CLAIM
+            // Add key that deployed the contract for MANAGEMENT, EXECUTION, CLAIM
             _addKey(senderKey, MANAGEMENT_KEY, ECDSA_TYPE);
-            _addKey(senderKey, ACTION_KEY, ECDSA_TYPE);
+            _addKey(senderKey, EXECUTION_KEY, ECDSA_TYPE);
             _addKey(senderKey, CLAIM_SIGNER_KEY, ECDSA_TYPE);
-            actionCount = 1;
+            executionCount = 1;
             managementCount = 1;
         } else {
             // Add constructor keys
@@ -106,18 +106,18 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
                 if (_purposes[i] == MANAGEMENT_KEY) {
                     managementCount++;
                 } else
-                if (_purposes[i] == ACTION_KEY) {
-                    actionCount++;
+                if (_purposes[i] == EXECUTION_KEY) {
+                    executionCount++;
                 }
             }
         }
 
         require(_managementThreshold > 0, "management threshold too low");
         require(_managementThreshold <= managementCount, "management threshold too high");
-        require(_actionThreshold > 0, "action threshold too low");
-        require(_actionThreshold <= actionCount, "action threshold too high");
+        require(_executionThreshold > 0, "execution threshold too low");
+        require(_executionThreshold <= executionCount, "execution threshold too high");
         managementThreshold = _managementThreshold;
-        actionThreshold = _actionThreshold;
+        executionThreshold = _executionThreshold;
     }
 
     /// @dev Validate claims are sorted and unique

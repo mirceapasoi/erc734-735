@@ -15,13 +15,13 @@ contract("KeyManager", async (accounts) => {
     describe("addKey", async () => {
         it("should not add the same key twice", async () => {
             // Start with 2
-            await assertKeyCount(identity, Purpose.ACTION, 2);
+            await assertKeyCount(identity, Purpose.EXECUTION, 2);
 
-            await assertOkTx(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.manager[0]}));
-            await assertOkTx(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.manager[1]}));
+            await assertOkTx(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.manager[0]}));
+            await assertOkTx(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.manager[1]}));
 
             // End with 3
-            await assertKeyCount(identity, Purpose.ACTION, 3);
+            await assertKeyCount(identity, Purpose.EXECUTION, 3);
 
             let total = await identity.numKeys();
             expect(total).to.be.bignumber.equal('5');
@@ -29,13 +29,13 @@ contract("KeyManager", async (accounts) => {
 
         it ("should add only for management keys", async () => {
             // Start with 2
-            await assertKeyCount(identity, Purpose.ACTION, 2);
+            await assertKeyCount(identity, Purpose.EXECUTION, 2);
 
-            await shouldFail(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[0]}));
-            await shouldFail(identity.addKey(keys.action[2], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[1]}));
+            await shouldFail(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[0]}));
+            await shouldFail(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[1]}));
 
             // End with 2
-            await assertKeyCount(identity, Purpose.ACTION, 2);
+            await assertKeyCount(identity, Purpose.EXECUTION, 2);
 
             let total = await identity.numKeys();
             expect(total).to.be.bignumber.equal('4');
@@ -44,14 +44,14 @@ contract("KeyManager", async (accounts) => {
         it("should add multi-purpose keys", async () => {
             // Start with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
-            await assertKeyCount(identity, Purpose.ACTION, 2);
+            await assertKeyCount(identity, Purpose.EXECUTION, 2);
 
-            await assertOkTx(identity.addKey(keys.action[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
-            await assertOkTx(identity.addKey(keys.manager[0], Purpose.ACTION, KeyType.ECDSA, {from: addr.action[0]}));
+            await assertOkTx(identity.addKey(keys.execution[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
+            await assertOkTx(identity.addKey(keys.manager[0], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[0]}));
 
             // End with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
-            await assertKeyCount(identity, Purpose.ACTION, 3);
+            await assertKeyCount(identity, Purpose.EXECUTION, 3);
 
             let total = await identity.numKeys();
             expect(total).to.be.bignumber.equal('6');
@@ -62,10 +62,10 @@ contract("KeyManager", async (accounts) => {
         it("should remove multi-purpose keys", async () => {
             // Start with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
-            await assertKeyCount(identity, Purpose.ACTION, 2);
+            await assertKeyCount(identity, Purpose.EXECUTION, 2);
 
-            // Add ACTION as MANAGEMENT
-            await assertOkTx(identity.addKey(keys.action[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
+            // Add EXECUTION as MANAGEMENT
+            await assertOkTx(identity.addKey(keys.execution[0], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
             // Remove MANAGEMENT
@@ -76,16 +76,16 @@ contract("KeyManager", async (accounts) => {
             await assertOkTx(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.manager[0]}));
             await assertKeyCount(identity, Purpose.MANAGEMENT, 1);
 
-            // Remove ACTION
-            await assertOkTx(identity.removeKey(keys.action[0], Purpose.ACTION, {from: addr.action[0]}));
-            await assertKeyCount(identity, Purpose.ACTION, 1);
+            // Remove EXECUTION
+            await assertOkTx(identity.removeKey(keys.execution[0], Purpose.EXECUTION, {from: addr.action[0]}));
+            await assertKeyCount(identity, Purpose.EXECUTION, 1);
 
-            // Remove ACTION as MANAGEMENT
-            await assertOkTx(identity.removeKey(keys.action[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
+            // Remove EXECUTION as MANAGEMENT
+            await assertOkTx(identity.removeKey(keys.execution[0], Purpose.MANAGEMENT, {from: addr.action[0]}));
             await assertKeyCount(identity, Purpose.MANAGEMENT, 0);
 
             // Storage is clean
-            let {purposes, keyType, key} = await identity.getKey(keys.action[0]);
+            let {purposes, keyType, key} = await identity.getKey(keys.execution[0]);
             expect(keyType).to.be.bignumber.equal('0');
             assert.equal(key, '0x' + '0'.repeat(64));
             assert.equal(purposes.length, 0);

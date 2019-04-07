@@ -6,7 +6,7 @@ pragma solidity ^0.5.7;
 
 library KeyStore {
     struct Key {
-        uint256[] purposes; //e.g., MANAGEMENT_KEY = 1, ACTION_KEY = 2, etc.
+        uint256[] purposes; //e.g., MANAGEMENT_KEY = 1, EXECUTION_KEY = 2, etc.
         uint256 keyType; // e.g. 1 = ECDSA, 2 = RSA, etc.
         bytes32 key; // for non-hex and long keys, its the Keccak256 hash of the key
     }

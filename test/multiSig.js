@@ -22,21 +22,21 @@ contract("MultiSig", async (accounts) => {
 
     describe("execute(_to = self)", async () => {
         it("should add key", async () => {
-            await assertKeyCount(identity, Purpose.ACTION, 3);
+            await assertKeyCount(identity, Purpose.EXECUTION, 3);
 
-            let addKeyData = identity.contract.methods.addKey(keys.action[3], Purpose.ACTION, KeyType.ECDSA).encodeABI();
+            let addKeyData = identity.contract.methods.addKey(keys.execution[3], Purpose.EXECUTION, KeyType.ECDSA).encodeABI();
             await assertOkTx(identity.execute(identity.address, 0, addKeyData, {from: addr.manager[0]}));
 
-            await assertKeyCount(identity, Purpose.ACTION, 4);
+            await assertKeyCount(identity, Purpose.EXECUTION, 4);
         });
 
         it("should add key only with management keys", async () => {
-            await assertKeyCount(identity, Purpose.ACTION, 3);
+            await assertKeyCount(identity, Purpose.EXECUTION, 3);
 
-            let addKeyData = identity.contract.methods.addKey(keys.action[3], Purpose.ACTION, KeyType.ECDSA).encodeABI();
-            await shouldFail(identity.execute(identity.address, 0, addKeyData, {from: addr.action[0]}));
+            let addKeyData = identity.contract.methods.addKey(keys.execution[3], Purpose.EXECUTION, KeyType.ECDSA).encodeABI();
+            await shouldFail(identity.execute(identity.address, 0, addKeyData, {from: addr.execution[0]}));
 
-            await assertKeyCount(identity, Purpose.ACTION, 3);
+            await assertKeyCount(identity, Purpose.EXECUTION, 3);
         });
 
         it("should remove key", async () => {
@@ -52,7 +52,7 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
             let removeKeyData = identity.contract.methods.removeKey(keys.manager[0], Purpose.MANAGEMENT).encodeABI();
-            await shouldFail(identity.execute(identity.address, 0, removeKeyData, {from: addr.action[1]}));
+            await shouldFail(identity.execute(identity.address, 0, removeKeyData, {from: addr.execution[1]}));
 
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
         });
@@ -60,19 +60,19 @@ contract("MultiSig", async (accounts) => {
 
     describe("execute(_to != self)", async () => {
         it("other contract works", async () => {
-            assert.equal(await otherContract.numCalls(addr.action[1]), 0);
+            assert.equal(await otherContract.numCalls(addr.execution[1]), 0);
 
-            await assertOkTx(otherContract.callMe({from: addr.action[1]}));
+            await assertOkTx(otherContract.callMe({from: addr.execution[1]}));
 
-            assert.equal(await otherContract.numCalls(addr.action[1]), 1);
+            assert.equal(await otherContract.numCalls(addr.execution[1]), 1);
         });
 
-        it("should call other contracts with action keys", async () => {
+        it("should call other contracts with execution keys", async () => {
             // Identity never called other contract
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             let callData = otherContract.contract.methods.callMe().encodeABI();
-            await assertOkTx(identity.execute(otherContract.address, 0, callData, {from: addr.action[1]}));
+            await assertOkTx(identity.execute(otherContract.address, 0, callData, {from: addr.execution[1]}));
 
             // Identity called other contract
             assert.equal(await otherContract.numCalls(identity.address), 1);
@@ -123,8 +123,8 @@ contract("MultiSig", async (accounts) => {
             // Can't double approve
             await shouldFail(identity.approve(id, true, {from: addr.manager[1]}));
 
-            // Action keys can't approve
-            await shouldFail(identity.approve(id, true, {from: addr.action[0]}));
+            // Execution keys can't approve
+            await shouldFail(identity.approve(id, true, {from: addr.execution[0]}));
 
             // Other manager disapproves at first
             await assertOkTx(identity.approve(id, false, {from: addr.manager[0]}));
@@ -142,7 +142,7 @@ contract("MultiSig", async (accounts) => {
             await shouldFail(identity.approve(id, false, {from: addr.manager[2]}));
         });
 
-        it("needs three action keys to call other", async () => {
+        it("needs three execution keys to call other", async () => {
             // One manager increases the threshold
             await assertOkTx(identity.changeActionThreshold(3, {from: addr.manager[1]}));
 
@@ -151,32 +151,32 @@ contract("MultiSig", async (accounts) => {
 
             // One action requested
             let callData = otherContract.contract.methods.callMe().encodeABI();
-            let r = await assertOkTx(identity.execute(otherContract.address, 0, callData, {from: addr.action[1]}));
+            let r = await assertOkTx(identity.execute(otherContract.address, 0, callData, {from: addr.execution[1]}));
             let id = findExecutionId(r);
 
             // Still no calls
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             // Can't double approve
-            await shouldFail(identity.approve(id, true, {from: addr.action[1]}));
+            await shouldFail(identity.approve(id, true, {from: addr.execution[1]}));
 
             // Management keys can't approve
             await shouldFail(identity.approve(id, true, {from: addr.manager[1]}));
 
             // Approve, disapprove, approve
-            await assertOkTx(identity.approve(id, true, {from: addr.action[0]}));
-            await assertOkTx(identity.approve(id, false, {from: addr.action[0]}));
-            await assertOkTx(identity.approve(id, true, {from: addr.action[0]}));
+            await assertOkTx(identity.approve(id, true, {from: addr.execution[0]}));
+            await assertOkTx(identity.approve(id, false, {from: addr.execution[0]}));
+            await assertOkTx(identity.approve(id, true, {from: addr.execution[0]}));
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             // One more approval
-            await assertOkTx(identity.approve(id, true, {from: addr.action[2]}));
+            await assertOkTx(identity.approve(id, true, {from: addr.execution[2]}));
 
             // Call has been made!
             assert.equal(await otherContract.numCalls(identity.address), 1);
 
             // ID no longer exists
-            await shouldFail(identity.approve(id, false, {from: addr.action[1]}));
+            await shouldFail(identity.approve(id, false, {from: addr.execution[1]}));
         });
     });
 
