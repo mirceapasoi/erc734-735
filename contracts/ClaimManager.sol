@@ -116,12 +116,12 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         public
         view
         returns (
-        uint256 topic,
-        uint256 scheme,
-        address issuer,
-        bytes memory signature,
-        bytes memory data,
-        string memory uri
+            uint256 topic,
+            uint256 scheme,
+            address issuer,
+            bytes memory signature,
+            bytes memory data,
+            string memory uri
         )
     {
         Claim memory c = claims[_claimId];
