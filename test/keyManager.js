@@ -1,4 +1,4 @@
-import { shouldFail } from 'openzeppelin-test-helpers';
+import { expectRevert } from 'openzeppelin-test-helpers';
 import { expect } from 'chai';
 import { setupTest, assertKeyCount, Purpose, KeyType } from './base';
 import { printTestGas, assertOkTx } from './util';
@@ -31,8 +31,14 @@ contract("KeyManager", async (accounts) => {
             // Start with 2
             await assertKeyCount(identity, Purpose.EXECUTION, 2);
 
-            await shouldFail(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[0]}));
-            await shouldFail(identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[1]}));
+            await expectRevert(
+                identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[0]}),
+                'only management or self'
+            );
+            await expectRevert(
+                identity.addKey(keys.execution[2], Purpose.EXECUTION, KeyType.ECDSA, {from: addr.execution[1]}),
+                'only management or self'
+            );
 
             // End with 2
             await assertKeyCount(identity, Purpose.EXECUTION, 2);
@@ -111,8 +117,14 @@ contract("KeyManager", async (accounts) => {
             // Start with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);
 
-            await shouldFail(identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.execution[0]}));
-            await shouldFail(identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.execution[1]}));
+            await expectRevert(
+                identity.removeKey(keys.manager[0], Purpose.MANAGEMENT, {from: addr.execution[0]}),
+                'only management or self'
+            );
+            await expectRevert(
+                identity.removeKey(keys.manager[1], Purpose.MANAGEMENT, {from: addr.execution[1]}),
+                'only management or self'
+            );
 
             // End with 2
             await assertKeyCount(identity, Purpose.MANAGEMENT, 2);

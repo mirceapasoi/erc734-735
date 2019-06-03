@@ -1,4 +1,4 @@
-import { shouldFail } from 'openzeppelin-test-helpers';
+import { expectRevert } from 'openzeppelin-test-helpers';
 import { setupTest } from './base';
 import { assertOkTx, printTestGas } from './util';
 
@@ -18,6 +18,9 @@ contract("Destructible", async (accounts) => {
     });
 
     it("should not be killed by others", async () => {
-        await shouldFail(identity.destroyAndSend(addr.execution[0], {from: addr.execution[0]}));
+        await expectRevert(
+            identity.destroyAndSend(addr.execution[0], {from: addr.execution[0]}),
+            'only management or self'
+        );
     });
 });

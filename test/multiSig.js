@@ -1,4 +1,4 @@
-import { shouldFail } from 'openzeppelin-test-helpers';
+import { expectRevert } from 'openzeppelin-test-helpers';
 import { setupTest, assertKeyCount, Purpose, KeyType } from './base';
 import { printTestGas, assertOkTx } from './util';
 
@@ -34,7 +34,10 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.EXECUTION, 3);
 
             let addKeyData = identity.contract.methods.addKey(keys.execution[3], Purpose.EXECUTION, KeyType.ECDSA).encodeABI();
-            await shouldFail(identity.execute(identity.address, 0, addKeyData, {from: addr.execution[0]}));
+            await expectRevert(
+                identity.execute(identity.address, 0, addKeyData, {from: addr.execution[0]}),
+                'need management key for execute'
+            );
 
             await assertKeyCount(identity, Purpose.EXECUTION, 3);
         });
@@ -52,7 +55,10 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
             let removeKeyData = identity.contract.methods.removeKey(keys.manager[0], Purpose.MANAGEMENT).encodeABI();
-            await shouldFail(identity.execute(identity.address, 0, removeKeyData, {from: addr.execution[1]}));
+            await expectRevert(
+                identity.execute(identity.address, 0, removeKeyData, {from: addr.execution[1]}),
+                'need management key for execute'
+            );
 
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
         });
@@ -82,7 +88,10 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             let callData = otherContract.contract.methods.callMe().encodeABI();
-            await shouldFail(identity.execute(otherContract.address, 0, callData, {from: addr.manager[1]}));
+            await expectRevert(
+                identity.execute(otherContract.address, 0, callData, {from: addr.manager[1]}),
+                'need execution key for execute'
+            );
 
             assert.equal(await otherContract.numCalls(identity.address), 0);
         });
@@ -95,10 +104,22 @@ contract("MultiSig", async (accounts) => {
         });
 
         it("can't overflow threshold", async () => {
-            await shouldFail(identity.changeKeysRequired(Purpose.MANAGEMENT, 0, {from: addr.manager[0]}));
-            await shouldFail(identity.changeKeysRequired(Purpose.MANAGEMENT, 10, {from: addr.manager[1]}));
-            await shouldFail(identity.changeKeysRequired(Purpose.EXECUTION, 0, {from: addr.manager[0]}));
-            await shouldFail(identity.changeKeysRequired(Purpose.EXECUTION, 15, {from: addr.manager[1]}));
+            await expectRevert(
+                identity.changeKeysRequired(Purpose.MANAGEMENT, 0, {from: addr.manager[0]}),
+                'keys required too low'
+            );
+            await expectRevert(
+                identity.changeKeysRequired(Purpose.MANAGEMENT, 10, {from: addr.manager[1]}),
+                'keys required too high'
+            );
+            await expectRevert(
+                identity.changeKeysRequired(Purpose.EXECUTION, 0, {from: addr.manager[0]}),
+                'keys required too low'
+            );
+            await expectRevert(
+                identity.changeKeysRequired(Purpose.EXECUTION, 15, {from: addr.manager[1]}),
+                'keys required too high'
+            );
         });
 
         it("can't call directly once threshold is set", async () => {
@@ -107,8 +128,14 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await identity.getKeysRequired(Purpose.MANAGEMENT), 2);
 
             // Can't call methods directly
-            await shouldFail(identity.addKey(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}));
-            await shouldFail(identity.removeKey(keys.manager[2], Purpose.MANAGEMENT, {from: addr.manager[0]}));
+            await expectRevert(
+                identity.addKey(keys.manager[3], Purpose.MANAGEMENT, KeyType.ECDSA, {from: addr.manager[0]}),
+                'management threshold >1'
+            );
+            await expectRevert(
+                identity.removeKey(keys.manager[2], Purpose.MANAGEMENT, {from: addr.manager[0]}),
+                'management threshold >1'
+            );
         });
 
         it("needs two managers to add a key", async () => {
@@ -128,10 +155,16 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 3);
 
             // Can't double approve
-            await shouldFail(identity.approve(id, true, {from: addr.manager[1]}));
+            await expectRevert(
+                identity.approve(id, true, {from: addr.manager[1]}),
+                'already approved'
+            );
 
             // Execution keys can't approve
-            await shouldFail(identity.approve(id, true, {from: addr.execution[0]}));
+            await expectRevert(
+                identity.approve(id, true, {from: addr.execution[0]}),
+                'need management key for approve'
+            );
 
             // Other manager disapproves at first
             await assertOkTx(identity.approve(id, false, {from: addr.manager[0]}));
@@ -146,7 +179,10 @@ contract("MultiSig", async (accounts) => {
             await assertKeyCount(identity, Purpose.MANAGEMENT, 4);
 
             // ID no longer exists
-            await shouldFail(identity.approve(id, false, {from: addr.manager[2]}));
+            await expectRevert(
+                identity.approve(id, false, {from: addr.manager[2]}),
+                'null execution'
+            );
         });
 
         it("needs three execution keys to call other", async () => {
@@ -166,10 +202,16 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await otherContract.numCalls(identity.address), 0);
 
             // Can't double approve
-            await shouldFail(identity.approve(id, true, {from: addr.execution[1]}));
+            await expectRevert(
+                identity.approve(id, true, {from: addr.execution[1]}),
+                'already approved'
+            );
 
             // Management keys can't approve
-            await shouldFail(identity.approve(id, true, {from: addr.manager[1]}));
+            await expectRevert(
+                identity.approve(id, true, {from: addr.manager[1]}),
+                'need execution key for approve'
+            );
 
             // Approve, disapprove, approve
             await assertOkTx(identity.approve(id, true, {from: addr.execution[0]}));
@@ -184,7 +226,10 @@ contract("MultiSig", async (accounts) => {
             assert.equal(await otherContract.numCalls(identity.address), 1);
 
             // ID no longer exists
-            await shouldFail(identity.approve(id, false, {from: addr.execution[1]}));
+            await expectRevert(
+                identity.approve(id, false, {from: addr.execution[1]}),
+                'null execution'
+            );
         });
     });
 

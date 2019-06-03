@@ -1,4 +1,4 @@
-pragma solidity ^0.5.7;
+pragma solidity ^0.5.9;
 
 import "./Pausable.sol";
 import "./ERC725.sol";
@@ -92,7 +92,7 @@ contract MultiSig is Pausable, ERC725 {
         require(_id != 0, "null execution ID");
         Execution storage e = execution[_id];
         // Must exist
-        require(e.to != address(0), "null approve to");
+        require(e.to != address(0), "null execution");
 
         // Must be approved with the right key
         if (e.to == address(this)) {

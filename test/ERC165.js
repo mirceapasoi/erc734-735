@@ -1,4 +1,4 @@
-import { shouldFail } from 'openzeppelin-test-helpers';
+import { expectRevert } from 'openzeppelin-test-helpers';
 import { setupTest } from './base';
 import { printTestGas } from './util';
 
@@ -38,7 +38,10 @@ contract("ERC165", async (accounts) => {
         let test = await TestContract.deployed();
         let success, result;
         // Call reverts
-        await shouldFail(test.supportsInterface("0xffffffff"));
+        await expectRevert(
+            test.supportsInterface("0xffffffff"),
+            "Don't call me"
+        );
         // Staticcall doesn't
         ({ success, result } = await test.noThrowCall(test.address, "0xffffffff"));
         assert.isFalse(success);

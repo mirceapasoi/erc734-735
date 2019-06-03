@@ -1,4 +1,4 @@
-import { shouldFail } from 'openzeppelin-test-helpers';
+import { expectRevert } from 'openzeppelin-test-helpers';
 import { setupTest, utf8ToBytes, Purpose, Topic, Scheme } from './base';
 import { printTestGas, assertOkTx, fixSignature } from './util';
 import { expect } from 'chai';
@@ -99,11 +99,17 @@ contract("ClaimManager", async (accounts) => {
             let invalidSignature = web3.utils.sha3(toSign);
 
             // Try to add self-claim as manager
-            await shouldFail(identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, invalidSignature, label, uri, {from: addr.manager[0]}));
+            await expectRevert(
+                identity.addClaim(Topic.PROFILE, Scheme.ECDSA, identity.address, invalidSignature, label, uri, {from: addr.manager[0]}),
+                'addClaim invalid signature'
+            );
 
             // Claim doesn't exist
             let claimId = await identity.getClaimId(identity.address, Topic.PROFILE);
-            await shouldFail(identity.getClaim(claimId));
+            await expectRevert(
+                identity.getClaim(claimId),
+                'issuer must exist'
+            );
         });
 
         it("can add self-claim with manager approval", async () => {
@@ -120,7 +126,10 @@ contract("ClaimManager", async (accounts) => {
 
             // Claim doesn't exist yet
             let claimId = await identity.getClaimId(identity.address, Topic.PROFILE);
-            await shouldFail(identity.getClaim(claimId));
+            await expectRevert(
+                identity.getClaim(claimId),
+                'issuer must exist'
+            );
 
             // Approve
             await assertOkTx(identity.approve(claimRequestId, true, {from: addr.manager[0]}));
@@ -189,7 +198,10 @@ contract("ClaimManager", async (accounts) => {
             let invalidSignature = web3.utils.sha3(toSign);
 
             // Try to update self-claim as manager
-            await shouldFail(identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, invalidSignature, label, newUri, {from: addr.manager[1]}));
+            await expectRevert(
+                identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, invalidSignature, label, newUri, {from: addr.manager[1]}),
+                'invalid signature'
+            );
 
             // Claim is unchanged
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
@@ -255,7 +267,10 @@ contract("ClaimManager", async (accounts) => {
             await assertOkTx(identity.removeClaim(claimId, {from: addr.manager[0]}));
 
             // Check claim no longer exists
-            await shouldFail(identity.getClaim(claimId));
+            await expectRevert(
+                identity.getClaim(claimId),
+                'issuer must exist'
+            );
 
             await assertClaims(1, {[Topic.LABEL]: 1});
         });
@@ -269,7 +284,10 @@ contract("ClaimManager", async (accounts) => {
             await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
 
             // Check claim no longer exists
-            await shouldFail(identity.getClaim(claimId));
+            await expectRevert(
+                identity.getClaim(claimId),
+                'issuer must exist'
+            );
 
             await assertClaims(1, {[Topic.LABEL]: 1});
         })
@@ -283,7 +301,10 @@ contract("ClaimManager", async (accounts) => {
             await assertOkTx(identity.removeClaim(claimId, {from: addr.other}));
 
             // Check claim no longer exists
-            await shouldFail(identity.getClaim(claimId));
+            await expectRevert(
+                identity.getClaim(claimId),
+                'issuer must exist'
+            );
 
             await assertClaims(1, {[Topic.LABEL]: 1});
         });
