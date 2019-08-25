@@ -18,7 +18,8 @@ contract ERC735 is ERC165 {
     function ERC735ID() public pure returns (bytes4) {
         return (
             this.getClaim.selector ^ this.getClaimIdsByType.selector ^
-            this.addClaim.selector ^ this.removeClaim.selector
+            this.addClaim.selector ^ this.removeClaim.selector ^
+            this.changeClaim.selector
         );
     }
 
@@ -42,9 +43,11 @@ contract ERC735 is ERC165 {
     event ClaimRemoved(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
     event ClaimChanged(bytes32 indexed claimId, uint256 indexed topic, uint256 scheme, address indexed issuer, bytes signature, bytes data, string uri);
 
+
     // Functions
     function getClaim(bytes32 _claimId) public view returns(uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, string memory uri);
     function getClaimIdsByType(uint256 _topic) public view returns(bytes32[] memory claimIds);
     function addClaim(uint256 _topic, uint256 _scheme, address issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId);
+    function changeClaim(bytes32 _claimId, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bool success);
     function removeClaim(bytes32 _claimId) public returns (bool success);
 }

@@ -43,7 +43,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         uint256 _topic,
         uint256 _scheme,
         address issuer,
-        bytes memory  _signature,
+        bytes memory _signature,
         bytes memory _data,
         string memory _uri
     )
@@ -67,16 +67,40 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         if (claims[claimId].issuer == address(0)) {
             _addClaim(claimId, _topic, _scheme, issuer, _signature, _data, _uri);
         } else {
-            // Existing claim
-            Claim storage c = claims[claimId];
-            c.scheme = _scheme;
-            c.signature = _signature;
-            c.data = _data;
-            c.uri = _uri;
-            // You can't change issuer or topic without affecting the claimId, so we
-            // don't need to update those two fields
-            emit ClaimChanged(claimId, _topic, _scheme, issuer, _signature, _data, _uri);
+            _changeClaim(claimId, _topic, _scheme, issuer, _signature, _data, _uri);
         }
+    }
+
+    /// @dev Changes a claim. Can only be changed by the claim issuer, or the claim holder itself.
+    /// @param _claimId Claim ID to change
+    /// @param _topic Type of claim
+    /// @param _scheme Scheme used for the signatures
+    /// @param issuer Address of issuer
+    /// @param _signature The actual signature
+    /// @param _data The data that was signed
+    /// @param _uri The location of the claim
+    /// @return `true` if the claim is found and changed
+    function changeClaim(
+        bytes32 _claimId,
+        uint256 _topic,
+        uint256 _scheme,
+        address issuer,
+        bytes memory _signature,
+        bytes memory _data,
+        string memory _uri
+    )
+        public
+        whenNotPaused
+        onlyManagementOrSelfOrIssuer(_claimId)
+        returns (bool success)
+    {
+        Claim memory c = claims[_claimId];
+        // Must exist
+        require(c.issuer != address(0), "issuer must exist");
+        // Check signature
+        require(_validSignature(_topic, _scheme, issuer, _signature, _data), "changeClaim invalid signature");
+        _changeClaim(_claimId, _topic, _scheme, issuer, _signature, _data, _uri);
+        return true;
     }
 
     /// @dev Removes a claim. Can only be removed by the claim issuer, or the claim holder itself.
@@ -269,12 +293,12 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
             require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), EXECUTION_KEY), "issuer contract missing execution key");
         } else {
             // Invalid! Sender is NOT Management or Self or Issuer
-            revert();
+            require(false, "only management or self or issuer");
         }
         _;
     }
 
-    /// @dev Add key data to the identity without checking if it already exists
+    /// @dev Add claim data to the identity without checking if it already exists
     /// @param _claimId Claim ID
     /// @param _topic Type of claim
     /// @param _scheme Scheme used for the signatures
@@ -300,17 +324,35 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         emit ClaimAdded(_claimId, _topic, _scheme, issuer, _signature, _data, _uri);
     }
 
-    /// @dev Update the URI of an existing claim without any checks
+    /// @dev Change claim data to the identity without checking if it already exists
+    /// @param _claimId Claim ID
     /// @param _topic Type of claim
+    /// @param _scheme Scheme used for the signatures
     /// @param issuer Address of issuer
+    /// @param _signature The actual signature
+    /// @param _data The data that was signed
     /// @param _uri The location of the claim
-    function _updateClaimUri(
+    function _changeClaim(
+        bytes32 _claimId,
         uint256 _topic,
+        uint256 _scheme,
         address issuer,
+        bytes memory _signature,
+        bytes memory _data,
         string memory _uri
     )
-    internal
+        internal
     {
-        claims[getClaimId(issuer, _topic)].uri = _uri;
+        // Existing claim
+        Claim storage c = claims[_claimId];
+        // You can't change issuer or topic without affecting the claimId, so we
+        // don't need to update those two fields
+        require(c.issuer == issuer, "can't change issuer");
+        require(c.topic == _topic, "can't change topic");
+        c.scheme = _scheme;
+        c.signature = _signature;
+        c.data = _data;
+        c.uri = _uri;
+        emit ClaimChanged(_claimId, _topic, _scheme, issuer, _signature, _data, _uri);
     }
 }

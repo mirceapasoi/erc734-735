@@ -10,8 +10,8 @@ contract("ERC165", async (accounts) => {
         ["0xffffffff", false],
         ["0x01ffc9a7", true], // ERC165
         ["0xfccbffbc", true], // ERC725
-        ["0x10765379", true], // ERC735
-        ["0xecbdacc5", true], // ERC725 + ERC735
+        ["0xcb1c73dc", true], // ERC735
+        ["0x37d78c60", true], // ERC725 + ERC735
     ];
 
     afterEach("print gas", printTestGas);

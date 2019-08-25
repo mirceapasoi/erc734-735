@@ -2,6 +2,7 @@ import { expectRevert } from 'openzeppelin-test-helpers';
 import { setupTest, utf8ToBytes, Purpose, Topic, Scheme } from './base';
 import { printTestGas, assertOkTx, fixSignature } from './util';
 import { expect } from 'chai';
+import { findExecutionId } from './multiSig';
 
 const TestContract = artifacts.require("TestContract");
 
@@ -177,8 +178,9 @@ contract("ClaimManager", async (accounts) => {
             // Check claim exists
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
 
+            let claimId = await identity.getClaimId(identity.address, Topic.LABEL);
             // Use same signature to update URI
-            await assertOkTx(identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, signature, label, newUri, {from: addr.manager[1]}));
+            await assertOkTx(identity.changeClaim(claimId, Topic.LABEL, Scheme.ECDSA, identity.address, signature, label, newUri, {from: addr.manager[1]}));
 
             // Check claim was updated
             await assertClaim(Topic.LABEL, identity.address, signature, label, newUri);
@@ -198,8 +200,9 @@ contract("ClaimManager", async (accounts) => {
             let invalidSignature = web3.utils.sha3(toSign);
 
             // Try to update self-claim as manager
+            let claimId = await identity.getClaimId(identity.address, Topic.LABEL);
             await expectRevert(
-                identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, invalidSignature, label, newUri, {from: addr.manager[1]}),
+                identity.changeClaim(claimId, Topic.LABEL, Scheme.ECDSA, identity.address, invalidSignature, label, newUri, {from: addr.manager[1]}),
                 'invalid signature'
             );
 
@@ -219,10 +222,18 @@ contract("ClaimManager", async (accounts) => {
             // Check claim
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
 
+            // Try to update claim with claim key
+            let claimId = await identity.getClaimId(identity.address, Topic.LABEL);
+            await expectRevert(
+                identity.changeClaim(claimId, Topic.LABEL, Scheme.ECDSA, identity.address, signature, label, newUri, {from: addr.claim[0]}),
+                'issuer contract missing execution key'
+            );
+            // Check claim wasn't updated
+            await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
+
             // Use same signature to update URI
             let r = await assertOkTx(identity.addClaim(Topic.LABEL, Scheme.ECDSA, identity.address, signature, label, newUri, {from: addr.claim[0]}));
             let claimRequestId = findClaimRequestId(r);
-
             // Check claim wasn't updated
             await assertClaim(Topic.LABEL, identity.address, signature, label, uri);
 
@@ -241,16 +252,9 @@ contract("ClaimManager", async (accounts) => {
             const {topic, scheme, issuer, signature, data, uri} = await identity.getClaim(claimId);
             let newUri = "https://twitter.com/mirceap";
 
-            // Deployer calls deployedContract.execute(...), which calls identity.addClaim(...)
-            let executeData = identity.contract.methods.addClaim(Topic.LABEL, Scheme.ECDSA, otherIdentity.address, signature, data, newUri).encodeABI();
-            let r = await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
-            let claimRequestId = findClaimRequestId(r);
-
-            // Claim hasn't been updated yet
-            await assertClaim(Topic.LABEL, otherIdentity.address, signature, data, uri);
-
-            // Approve
-            await assertOkTx(identity.approve(claimRequestId, true, {from: addr.manager[0]}));
+            // Deployer calls deployedContract.execute(...), which calls identity.changeClaim(...)
+            let executeData = identity.contract.methods.changeClaim(claimId, Topic.LABEL, Scheme.ECDSA, otherIdentity.address, signature, data, newUri).encodeABI();
+            await assertOkTx(otherIdentity.execute(identity.address, 0, executeData, {from: addr.other}));
 
             // Check claim
             await assertClaim(Topic.LABEL, otherIdentity.address, signature, data, newUri);

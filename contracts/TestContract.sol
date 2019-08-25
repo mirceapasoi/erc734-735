@@ -28,7 +28,7 @@ contract TestContract {
         external
     {
         // ERC735
-        require(msg.sender.doesContractImplementInterface(0x10765379), "caller doesn't implement ERC735");
+        require(msg.sender.doesContractImplementInterface(0xcb1c73dc), "caller doesn't implement ERC735");
         // Get first LABEL claim
         ERC735 id = ERC735(msg.sender);
         // 5 is LABEL_TOPIC

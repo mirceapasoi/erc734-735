@@ -4,6 +4,12 @@ import { printTestGas, assertOkTx } from './util';
 
 const TestContract = artifacts.require("TestContract");
 
+export const findExecutionId = (r) => {
+    // You will not get that return value inside this result.
+    // You must instead use an event and look up the result in the logs array.
+    return r.logs.find(e => e.event == 'ExecutionRequested').args.executionId;
+}
+
 contract("MultiSig", async (accounts) => {
     let identity, otherContract, addr, keys;
 
@@ -13,12 +19,6 @@ contract("MultiSig", async (accounts) => {
         ({ identity, addr, keys } = await setupTest(accounts, [3, 3, 0, 0], [4, 4, 1, 0]));
         otherContract = await TestContract.deployed();
     })
-
-    const findExecutionId = (r) => {
-        // You will not get that return value inside this result.
-        // You must instead use an event and look up the result in the logs array.
-        return r.logs.find(e => e.event == 'ExecutionRequested').args.executionId;
-    }
 
     describe("execute(_to = self)", async () => {
         it("should add key", async () => {

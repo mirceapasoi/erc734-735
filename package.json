@@ -4,11 +4,11 @@
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "chai-bn": "^0.1.1",
-    "ganache-cli": "^6.4.4",
+    "ganache-cli": "^6.6.0",
     "openzeppelin-solidity": "^2.3.0",
-    "solc": "^0.5.10",
-    "truffle": "^5.0.25",
-    "web3": "^1.0.0-beta.55"
+    "solc": "^0.5.11",
+    "truffle": "^5.0.33",
+    "web3": "^1.2.1"
   },
   "scripts": {
     "test": "truffle test",
@@ -20,9 +20,9 @@
     "babel-preset-stage-3": "^6.24.1",
     "babel-register": "^6.26.0",
     "chai": "^4.2.0",
-    "eth-gas-reporter": "^0.2.1",
-    "openzeppelin-test-helpers": "^0.4.0",
+    "eth-gas-reporter": "^0.2.10",
+    "openzeppelin-test-helpers": "^0.4.2",
     "rlp": "^2.2.3",
-    "solhint": "^2.1.0"
+    "solhint": "^2.2.0"
   }
 }
