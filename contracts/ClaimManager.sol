@@ -1,4 +1,4 @@
-pragma solidity ^0.5.11;
+pragma solidity ^0.5.12;
 
 import "../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 import "./Pausable.sol";
