@@ -5,10 +5,11 @@
     "babel-polyfill": "^6.26.0",
     "chai-bn": "^0.2.0",
     "ganache-cli": "^6.7.0",
-    "openzeppelin-solidity": "^2.3.0",
+    "npm-check-updates": "^3.2.1",
+    "openzeppelin-solidity": "^2.4.0",
     "solc": "^0.5.12",
-    "truffle": "^5.0.41",
-    "web3": "^1.2.1"
+    "truffle": "^5.0.44",
+    "web3": "^1.2.2"
   },
   "scripts": {
     "test": "truffle test",
@@ -22,7 +23,7 @@
     "chai": "^4.2.0",
     "eth-gas-reporter": "^0.2.12",
     "openzeppelin-test-helpers": "^0.5.1",
-    "rlp": "^2.2.3",
+    "rlp": "^2.2.4",
     "solhint": "^2.3.0"
   }
 }
