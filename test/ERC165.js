@@ -1,6 +1,6 @@
-import { expectRevert } from 'openzeppelin-test-helpers';
-import { setupTest } from './base';
-import { printTestGas } from './util';
+import { expectRevert } from "openzeppelin-test-helpers";
+import { setupTest } from "./base";
+import { printTestGas } from "./util";
 
 const TestContract = artifacts.require("TestContract");
 
@@ -18,17 +18,15 @@ contract("ERC165", async (accounts) => {
 
     beforeEach("new contract", async () => {
         ({ identity, addr, keys } = await setupTest(accounts, [2, 2, 0, 0], [3, 3, 0, 0]));
-    })
+    });
 
     it("checks ERC165 signatures", async () => {
-        assert.equal(await identity.ERC165ID(), input[1][0]);
-
+        let id = await identity.ERC165ID();
+        assert.equal(id, input[1][0]);
         let erc725 = await identity.ERC725ID();
         assert.equal(erc725, input[2][0]);
-
         let erc735 = await identity.ERC735ID();
         assert.equal(erc735, input[3][0]);
-
         erc725 = web3.utils.toBN(erc725);
         erc735 = web3.utils.toBN(erc735);
         assert.equal(web3.utils.numberToHex(erc725.xor(erc735)), input[4][0]);
@@ -38,26 +36,23 @@ contract("ERC165", async (accounts) => {
         let test = await TestContract.deployed();
         let success, result;
         // Call reverts
-        await expectRevert(
-            test.supportsInterface("0xffffffff"),
-            "Don't call me"
-        );
+        await expectRevert(test.supportsInterface("0xffffffff"), "Don't call me");
         // Staticcall doesn't
         ({ success, result } = await test.noThrowCall(test.address, "0xffffffff"));
         assert.isFalse(success);
-    })
+    });
 
     it("noThrowCall works", async () => {
         let test = await TestContract.deployed();
         let success, result;
-        for (let [sig, expected] of  input) {
+        for (let [sig, expected] of input) {
             ({ success, result } = await test.noThrowCall(identity.address, sig));
             assert.isTrue(success);
             assert.equal(expected, result);
         }
     });
 
-    it("ERC165Query works", async() => {
+    it("ERC165Query works", async () => {
         let test = await TestContract.deployed();
         for (let [sig, expected] of input) {
             let result = await test.doesContractImplementInterface(identity.address, sig);

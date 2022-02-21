@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 import "./ERC165.sol";
 
@@ -6,9 +7,9 @@ import "./ERC165.sol";
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC735
 
-contract ERC735 is ERC165 {
+abstract contract ERC735 is ERC165 {
     /// @dev Constructor that adds ERC735 as a supported interface
-    constructor() internal {
+    constructor() {
         supportedInterfaces[ERC735ID()] = true;
     }
 
@@ -45,9 +46,9 @@ contract ERC735 is ERC165 {
 
 
     // Functions
-    function getClaim(bytes32 _claimId) public view returns(uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, string memory uri);
-    function getClaimIdsByType(uint256 _topic) public view returns(bytes32[] memory claimIds);
-    function addClaim(uint256 _topic, uint256 _scheme, address issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (uint256 claimRequestId);
-    function changeClaim(bytes32 _claimId, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public returns (bool success);
-    function removeClaim(bytes32 _claimId) public returns (bool success);
+    function getClaim(bytes32 _claimId) public view virtual returns(uint256 topic, uint256 scheme, address issuer, bytes memory signature, bytes memory data, string memory uri);
+    function getClaimIdsByType(uint256 _topic) public view virtual returns(bytes32[] memory claimIds);
+    function addClaim(uint256 _topic, uint256 _scheme, address issuer, bytes memory _signature, bytes memory _data, string memory _uri) public virtual returns (uint256 claimRequestId);
+    function changeClaim(bytes32 _claimId, uint256 _topic, uint256 _scheme, address _issuer, bytes memory _signature, bytes memory _data, string memory _uri) public virtual returns (bool success);
+    function removeClaim(bytes32 _claimId) public virtual returns (bool success);
 }

@@ -1,13 +1,13 @@
 const Identity = artifacts.require("Identity");
-import { expect } from 'chai';
-import { getAndClearGas, measureTx, contractAddress, assertBlockGasLimit, fixSignature } from './util';
+import { expect } from "chai";
+import { getAndClearGas, measureTx, contractAddress, assertBlockGasLimit, fixSignature } from "./util";
 
 // Constants
 export const Purpose = {
     MANAGEMENT: 1,
     EXECUTION: 2,
     CLAIM: 3,
-    ENCRYPT: 4
+    ENCRYPT: 4,
 };
 
 export const KeyType = {
@@ -19,18 +19,18 @@ export const Topic = {
     RESIDENCE: 2,
     REGISTRY: 3,
     PROFILE: 4,
-    LABEL: 5
-}
+    LABEL: 5,
+};
 
 export const Scheme = {
     ECDSA: 1,
     RSA: 2,
-    CONTRACT: 3
-}
+    CONTRACT: 3,
+};
 
 export const utf8ToBytes = (s) => {
-    return web3.utils.hexToBytes(web3.utils.utf8ToHex(s))
-}
+    return web3.utils.hexToBytes(web3.utils.utf8ToHex(s));
+};
 
 export const assertKeyCount = async (identity, purpose, count) => {
     let keys = await identity.getKeysByPurpose(purpose);
@@ -38,22 +38,27 @@ export const assertKeyCount = async (identity, purpose, count) => {
 };
 
 // Setup test environment
-export const setupTest = async (accounts, init, total, claims = [], managementRequired = 1, executionRequired = 1, blockGasLimit = 10000000) => {
+export const setupTest = async (
+    accounts,
+    init,
+    total,
+    claims = [],
+    managementRequired = 1,
+    executionRequired = 1,
+    blockGasLimit = 10000000
+) => {
     let totalSum = total.reduce((a, b) => a + b);
     let initSum = init.reduce((a, b) => a + b);
-    let addr = {}, keys = {};
-
+    let addr = {},
+        keys = {};
     // Check we have enough accounts
     assert(initSum <= totalSum && totalSum + 1 <= accounts.length, "Not enough accounts");
-
     // Check block gas limit is appropriate
     await assertBlockGasLimit(blockGasLimit);
-
     // Use deployed identity for other identity
     let otherIdentity = await Identity.deployed();
     addr.other = accounts[0];
     keys.other = await otherIdentity.addrToKey(accounts[0]);
-
     // Slice accounts (0 is used above) and generate keys using keccak256
     let accountTuples = [];
     for (let addr of accounts.slice(1)) {
@@ -63,18 +68,18 @@ export const setupTest = async (accounts, init, total, claims = [], managementRe
     // Sort by keys (useful for identity constructor)
     accountTuples.sort((a, b) => a[1].localeCompare(b[1]));
     // Put keys in maps
-    const idxToPurpose = ['manager', 'execution', 'claim', 'encrypt'];
+    const idxToPurpose = ["manager", "execution", "claim", "encrypt"];
     for (let i = 0, j = 0; i < total.length; i++) {
         // Slice total[i] accounts
         let slice = accountTuples.slice(j, j + total[i]);
         j += total[i];
         let purpose = idxToPurpose[i];
-        addr[purpose] = slice.map(a => a[0]);
-        keys[purpose] = slice.map(a => a[1]);
+        addr[purpose] = slice.map((a) => a[0]);
+        keys[purpose] = slice.map((a) => a[1]);
     }
-
     // Init keys to be sent in constructor
-    let initKeys = [], initPurposes = [];
+    let initKeys = [],
+        initPurposes = [];
     for (let i = 0; i < init.length; i++) {
         let purpose = idxToPurpose[i];
         let k = keys[purpose].slice(0, init[i]);
@@ -82,7 +87,6 @@ export const setupTest = async (accounts, init, total, claims = [], managementRe
         initKeys = initKeys.concat(k);
         initPurposes = initPurposes.concat(p);
     }
-
     // Init self-claims to be sent in constructor
     let willDeployAt = await contractAddress(addr.manager[0]);
     let signatures = [];
@@ -104,12 +108,10 @@ export const setupTest = async (accounts, init, total, claims = [], managementRe
             // Sign using CLAIM_SIGNER_KEY
             let claimSigner = self ? addr.claim[0] : addr.other;
             let signature = fixSignature(await web3.eth.sign(toSign, claimSigner));
-            // Get bytes array
-            signatures.push(web3.utils.hexToBytes(signature));
-            datas.push(web3.utils.hexToBytes(dataHex));
+            signatures.push(signature);
+            datas.push(dataHex);
         }
     }
-
     // Deploy identity
     let identity = await Identity.new(
         // Keys
@@ -119,32 +121,29 @@ export const setupTest = async (accounts, init, total, claims = [], managementRe
         managementRequired,
         executionRequired,
         // Claims
-        claims.map(c => c.self ? willDeployAt : otherIdentity.address),
-        claims.map(c => c.type),
+        claims.map((c) => (c.self ? willDeployAt : otherIdentity.address)),
+        claims.map((c) => c.type),
         signatures,
         datas,
-        claims.map(c => c.uri),
+        claims.map((c) => c.uri),
         // Use max gas for deploys
-        {from: addr.manager[0], gas: blockGasLimit}
+        { from: addr.manager[0], gas: blockGasLimit }
     );
     // Make sure it matches address used for signatures
     assert.equal(identity.address, willDeployAt, "Deployed address does not match");
     // Measure gas usage
     await measureTx(identity.transactionHash);
-
     // Check init keys
     let contractKeys = await identity.numKeys();
     expect(contractKeys).to.be.bignumber.equal(initSum.toString());
     // Check init claims
     let contractClaims = await identity.numClaims();
     expect(contractClaims).to.be.bignumber.equal(claims.length.toString());
-
     getAndClearGas();
-
     return {
         identity,
         addr,
         keys,
-        otherIdentity
-    }
-}
+        otherIdentity,
+    };
+};

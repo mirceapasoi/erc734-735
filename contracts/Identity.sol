@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 pragma experimental ABIEncoderV2;
 
@@ -13,7 +14,7 @@ import "./ClaimManager.sol";
 /// @author Mircea Pasoi
 /// @notice Identity contract implementing both ERC 725 and ERC 735
 
-contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetters {
+contract Identity is Destructible, KeyGetters, KeyManager, ClaimManager, MultiSig {
     /// @dev Constructor for Identity contract. If no initial keys are passed then
     ///  `msg.sender` is used as an initial MANAGEMENT_KEY, EXECUTION_KEY and CLAIM_SIGNER_KEY
     /// @param _keys Keys to start contract with, in ascending order; in case of equality, purposes must be ascending
@@ -37,7 +38,7 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
         bytes[] memory _datas,
         string[] memory _uris
     )
-    public {
+    {
         _validateKeys(_keys, _purposes);
         _validateClaims(_issuers, _topics);
 
@@ -50,7 +51,7 @@ contract Identity is KeyManager, MultiSig, ClaimManager, Destructible, KeyGetter
 
     // Fallback function accepts Ether transactions
     // solhint-disable-next-line no-empty-blocks
-    function () external payable {
+    receive () external payable {
     }
 
     /// @dev Validate keys are sorted and unique

@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 /// @title ERC165
 /// @author @fulldecent and @jbaylina
@@ -42,7 +43,8 @@ library ERC165Query {
     /// @dev `Calls supportsInterface(_interfaceId)` on a contract without throwing an error
     /// @param _contract Smart contract to call
     /// @param _interfaceId Interface to call
-    /// @return `success` is `true` if the call was successful; `result` is the result of the call
+    /// @return success `true` if the call was successful
+    /// @return result The result of the call
     function noThrowCall(address _contract, bytes4 _interfaceId)
         internal
         view

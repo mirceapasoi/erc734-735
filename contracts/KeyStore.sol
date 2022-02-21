@@ -1,9 +1,9 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 /// @title KeyStorage
 /// @author Mircea Pasoi
 /// @notice Library for managing an arrray of ERC 725 keys
-
 library KeyStore {
     struct Key {
         uint256[] purposes; //e.g., MANAGEMENT_KEY = 1, EXECUTION_KEY = 2, etc.
@@ -35,6 +35,7 @@ library KeyStore {
                 return true;
             }
         }
+        return false;
     }
 
     /// @dev Add a Key
@@ -57,7 +58,7 @@ library KeyStore {
     /// @dev Remove Key
     /// @param key Key bytes to remove
     /// @param purpose Purpose to remove
-    /// @return Key type of the key that was removed
+    /// @return keyType Key type of the key that was removed
     function remove(Keys storage self, bytes32 key, uint256 purpose)
         internal
         returns (uint256 keyType)
@@ -70,7 +71,7 @@ library KeyStore {
             if (p[i] == purpose) {
                 p[i] = p[p.length - 1];
                 delete p[p.length - 1];
-                p.length--;
+                p.pop();
                 self.numKeys--;
                 break;
             }
@@ -86,7 +87,7 @@ library KeyStore {
             if (k[i] == key) {
                 k[i] = k[k.length - 1];
                 delete k[k.length - 1];
-                k.length--;
+                k.pop();
             }
         }
     }

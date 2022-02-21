@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 import "./ERC165Query.sol";
 import "./ERC735.sol";
@@ -9,6 +10,7 @@ import "./ERC735.sol";
 
 contract TestContract {
     // Implements ERC165
+    using ERC165Query for address;
     using ERC165Query for address payable;
 
     // Events
@@ -54,6 +56,7 @@ contract TestContract {
         returns (bool)
     {
         require(false, "Don't call me");
+        return _interfaceId > 0;
     }
 
     /// @dev Expose method for testing

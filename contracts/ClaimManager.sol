@@ -1,6 +1,7 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
-import "../node_modules/openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "../node_modules/openzeppelin-solidity/contracts/utils/cryptography/ECDSA.sol";
 import "./Pausable.sol";
 import "./ERC725.sol";
 import "./ERC735.sol";
@@ -11,7 +12,7 @@ import "./ERC165Query.sol";
 /// @notice Implement functions from ERC735 spec
 /// @dev  Key data is stored using KeyStore library. Inheriting ERC725 for the getters
 
-contract ClaimManager is Pausable, ERC725, ERC735 {
+abstract contract ClaimManager is Pausable, ERC735 {
     using ECDSA for bytes32;
     using ERC165Query for address;
 
@@ -49,6 +50,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     )
         public
         whenNotPaused
+        override
         returns (uint256 claimRequestId)
     {
         // Check signature
@@ -79,7 +81,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     /// @param _signature The actual signature
     /// @param _data The data that was signed
     /// @param _uri The location of the claim
-    /// @return `true` if the claim is found and changed
+    /// @return success `true` if the claim is found and changed
     function changeClaim(
         bytes32 _claimId,
         uint256 _topic,
@@ -92,6 +94,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
         public
         whenNotPaused
         onlyManagementOrSelfOrIssuer(_claimId)
+        override
         returns (bool success)
     {
         Claim memory c = claims[_claimId];
@@ -105,11 +108,12 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
 
     /// @dev Removes a claim. Can only be removed by the claim issuer, or the claim holder itself.
     /// @param _claimId Claim ID to remove
-    /// @return `true` if the claim is found and removed
+    /// @return success `true` if the claim is found and removed
     function removeClaim(bytes32 _claimId)
         public
         whenNotPaused
         onlyManagementOrSelfOrIssuer(_claimId)
+        override
         returns (bool success)
     {
         Claim memory c = claims[_claimId];
@@ -123,7 +127,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
             if (topics[i] == _claimId) {
                 topics[i] = topics[topics.length - 1];
                 delete topics[topics.length - 1];
-                topics.length--;
+                topics.pop();
                 break;
             }
         }
@@ -135,10 +139,16 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
     }
 
     /// @dev Returns a claim by ID
-    /// @return (topic, scheme, issuer, signature, data, uri) tuple with claim data
+    /// @return topic Claim data
+    /// @return scheme Claim data
+    /// @return issuer Claim data
+    /// @return signature Claim data
+    /// @return data Claim data
+    /// @return uri Claim data
     function getClaim(bytes32 _claimId)
         public
         view
+        override
         returns (
             uint256 topic,
             uint256 scheme,
@@ -160,10 +170,11 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
 
     /// @dev Returns claims by type
     /// @param _topic Type of claims to return
-    /// @return array of claim IDs
+    /// @return claimIds Array of claim IDs
     function getClaimIdsByType(uint256 _topic)
         public
         view
+        override
         returns(bytes32[] memory claimIds)
     {
         claimIds = claimsByTopic[_topic];
@@ -256,7 +267,7 @@ contract ClaimManager is Pausable, ERC725, ERC735 {
                 return true;
             } else
             if (issuer == address(this)) {
-                return allKeys.find(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+                return KeyStore.find(allKeys, addrToKey(signedBy), CLAIM_SIGNER_KEY);
             } else {
                 if (issuer.doesContractImplementInterface(ERC725ID())) {
                     // Issuer is an Identity contract

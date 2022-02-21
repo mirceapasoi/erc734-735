@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 import "./KeyBase.sol";
 
@@ -7,14 +8,14 @@ import "./KeyBase.sol";
 /// @notice Base contract that can be destroyed by MANAGEMENT_KEY or the identity itself
 /// @dev Inspired by https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/lifecycle/Destructible.sol
 
-contract Destructible is KeyBase {
+abstract  contract Destructible is KeyBase {
     /// @dev Transfers the current balance and terminates the contract
     /// @param _recipient All funds in contract will be sent to this recipient
-    function destroyAndSend(address _recipient)
+    function destroyAndSend(address payable _recipient)
         public
         onlyManagementOrSelf
     {
         require(_recipient != address(0), "recipient must exist");
-        selfdestruct(address(uint160(_recipient)));
+        selfdestruct(_recipient);
     }
 }

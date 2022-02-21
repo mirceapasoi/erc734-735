@@ -1,16 +1,17 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 /// @title ERC165
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC165
 /// @dev Based on https://github.com/ethereum/EIPs/pull/881
 
-contract ERC165 {
+abstract contract ERC165 {
     /// @dev You must not set element 0xffffffff to true
     mapping(bytes4 => bool) internal supportedInterfaces;
 
     /// @dev Constructor that adds ERC165 as a supported interface
-    constructor() internal {
+    constructor() {
         supportedInterfaces[ERC165ID()] = true;
     }
 

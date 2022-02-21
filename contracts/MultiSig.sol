@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 import "./Pausable.sol";
 import "./ERC725.sol";
@@ -8,7 +9,7 @@ import "./ERC725.sol";
 /// @notice Implement execute and multi-sig functions from ERC725 spec
 /// @dev Key data is stored using KeyStore library. Inheriting ERC725 for the getters
 
-contract MultiSig is Pausable, ERC725 {
+abstract contract MultiSig is Pausable {
     // To prevent replay attacks
     uint256 private nonce = 1;
 
@@ -33,6 +34,7 @@ contract MultiSig is Pausable, ERC725 {
     )
         public
         whenNotPaused
+        override
         returns (uint256 executionId)
     {
         // TODO: Using threshold at time of execution
@@ -43,7 +45,7 @@ contract MultiSig is Pausable, ERC725 {
                 threshold = managementRequired;
             } else {
                 // Only management keys can operate on this contract
-                require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for execute");
+                require(KeyStore.find(allKeys, addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for execute");
                 threshold = managementRequired - 1;
             }
         } else {
@@ -53,7 +55,7 @@ contract MultiSig is Pausable, ERC725 {
                 threshold = executionRequired;
             } else {
                 // Execution keys can operate on other addresses
-                require(allKeys.find(addrToKey(msg.sender), EXECUTION_KEY), "need execution key for execute");
+                require(KeyStore.find(allKeys, addrToKey(msg.sender), EXECUTION_KEY), "need execution key for execute");
                 threshold = executionRequired - 1;
             }
         }
@@ -80,13 +82,14 @@ contract MultiSig is Pausable, ERC725 {
     ///  The approval could potentially trigger an execution (if the threshold is met).
     /// @param _id Execution ID
     /// @param _approve `true` if it's an approval, `false` if it's a disapproval
-    /// @return `false` if it's a disapproval and there's no previous approval from the sender OR
+    /// @return success `false` if it's a disapproval and there's no previous approval from the sender OR
     ///  if it's an approval that triggered a failed execution. `true` if it's a disapproval that
     ///  undos a previous approval from the sender OR if it's an approval that succeded OR
     ///  if it's an approval that triggered a succesful execution
     function approve(uint256 _id, bool _approve)
         public
         whenNotPaused
+        override
         returns (bool success)
     {
         require(_id != 0, "null execution ID");
@@ -96,9 +99,9 @@ contract MultiSig is Pausable, ERC725 {
 
         // Must be approved with the right key
         if (e.to == address(this)) {
-            require(allKeys.find(addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for approve");
+            require(KeyStore.find(allKeys, addrToKey(msg.sender), MANAGEMENT_KEY), "need management key for approve");
         } else {
-            require(allKeys.find(addrToKey(msg.sender), EXECUTION_KEY), "need execution key for approve");
+            require(KeyStore.find(allKeys, addrToKey(msg.sender), EXECUTION_KEY), "need execution key for approve");
         }
 
         emit Approved(_id, _approve);
@@ -111,7 +114,7 @@ contract MultiSig is Pausable, ERC725 {
                     // Undo approval
                     approvals[i] = approvals[approvals.length - 1];
                     delete approvals[approvals.length - 1];
-                    approvals.length--;
+                    approvals.pop();
                     e.needsApprove += 1;
                     return true;
                 }
@@ -141,6 +144,7 @@ contract MultiSig is Pausable, ERC725 {
     function changeKeysRequired(uint256 purpose, uint256 number)
         external
         whenNotPaused
+        override
         onlyManagementOrSelf
     {
         require(purpose == MANAGEMENT_KEY || purpose == EXECUTION_KEY, "unknown purpose");
@@ -161,6 +165,7 @@ contract MultiSig is Pausable, ERC725 {
     function getKeysRequired(uint256 purpose)
         external
         view
+        override
         returns(uint256)
     {
         require(purpose == MANAGEMENT_KEY || purpose == EXECUTION_KEY, "unknown purpose");
@@ -209,7 +214,7 @@ contract MultiSig is Pausable, ERC725 {
         // Call
         // TODO: Should we also support DelegateCall and Create (new contract)?
         // solhint-disable-next-line avoid-call-value
-        (bool success, ) = e.to.call.value(e.value)(e.data);
+        (bool success, ) = e.to.call{value: e.value}(e.data);
         if (!success) {
             emit ExecutionFailed(_id, e.to, e.value, e.data);
             return false;

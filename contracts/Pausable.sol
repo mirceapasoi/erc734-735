@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 import "./KeyBase.sol";
 
@@ -7,7 +8,7 @@ import "./KeyBase.sol";
 /// @notice Base contract which allows children to implement an emergency stop mechanism
 /// @dev Inspired by https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/lifecycle/Pausable.sol
 
-contract Pausable is KeyBase {
+abstract contract Pausable is KeyBase {
     event LogPause();
     event LogUnpause();
 

@@ -1,4 +1,5 @@
-pragma solidity ^0.5.16;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.12;
 
 import "./ERC165.sol";
 
@@ -6,9 +7,9 @@ import "./ERC165.sol";
 /// @author Mircea Pasoi
 /// @notice Abstract contract for ERC725
 
-contract ERC725 is ERC165 {
+abstract contract ERC725 is ERC165 {
     /// @dev Constructor that adds ERC725 as a supported interface
-    constructor() internal {
+    constructor() {
         supportedInterfaces[ERC725ID()] = true;
     }
 
@@ -51,13 +52,13 @@ contract ERC725 is ERC165 {
     event ExecutionFailed(uint256 indexed executionId, address indexed to, uint256 indexed value, bytes data);
 
     // Functions
-    function getKey(bytes32 _key) public view returns(uint256[] memory purposes, uint256 keyType, bytes32 key);
-    function keyHasPurpose(bytes32 _key, uint256 purpose) public view returns(bool exists);
-    function getKeysByPurpose(uint256 _purpose) public view returns(bytes32[] memory keys);
-    function addKey(bytes32 _key, uint256 _purpose, uint256 _keyType) public returns (bool success);
-    function removeKey(bytes32 _key, uint256 _purpose) public returns (bool success);
-    function changeKeysRequired(uint256 purpose, uint256 number) external;
-    function getKeysRequired(uint256 purpose) external view returns(uint256);
-    function execute(address _to, uint256 _value, bytes memory _data) public returns (uint256 executionId);
-    function approve(uint256 _id, bool _approve) public returns (bool success);
+    function getKey(bytes32 _key) public view virtual returns(uint256[] memory purposes, uint256 keyType, bytes32 key);
+    function keyHasPurpose(bytes32 _key, uint256 purpose) public view virtual returns(bool exists);
+    function getKeysByPurpose(uint256 _purpose) public view virtual returns(bytes32[] memory keys);
+    function addKey(bytes32 _key, uint256 _purpose, uint256 _keyType) public virtual returns (bool success);
+    function removeKey(bytes32 _key, uint256 _purpose) public virtual returns (bool success);
+    function changeKeysRequired(uint256 purpose, uint256 number) external virtual;
+    function getKeysRequired(uint256 purpose) external view virtual returns(uint256);
+    function execute(address _to, uint256 _value, bytes memory _data) public virtual returns (uint256 executionId);
+    function approve(uint256 _id, bool _approve) public virtual returns (bool success);
 }
