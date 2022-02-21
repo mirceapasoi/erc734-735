@@ -9,9 +9,9 @@ contract("ERC165", async (accounts) => {
     const input = [
         ["0xffffffff", false],
         ["0x01ffc9a7", true], // ERC165
-        ["0xfccbffbc", true], // ERC725
+        ["0xfccbffbc", true], // ERC734
         ["0xcb1c73dc", true], // ERC735
-        ["0x37d78c60", true], // ERC725 + ERC735
+        ["0x37d78c60", true], // ERC734 + ERC735
     ];
 
     afterEach("print gas", printTestGas);
@@ -23,13 +23,13 @@ contract("ERC165", async (accounts) => {
     it("checks ERC165 signatures", async () => {
         let id = await identity.ERC165ID();
         assert.equal(id, input[1][0]);
-        let erc725 = await identity.ERC725ID();
-        assert.equal(erc725, input[2][0]);
+        let erc734 = await identity.ERC734ID();
+        assert.equal(erc734, input[2][0]);
         let erc735 = await identity.ERC735ID();
         assert.equal(erc735, input[3][0]);
-        erc725 = web3.utils.toBN(erc725);
+        erc734 = web3.utils.toBN(erc734);
         erc735 = web3.utils.toBN(erc735);
-        assert.equal(web3.utils.numberToHex(erc725.xor(erc735)), input[4][0]);
+        assert.equal(web3.utils.numberToHex(erc734.xor(erc735)), input[4][0]);
     });
 
     it("noThrowCall doesn't throw", async () => {
@@ -60,7 +60,7 @@ contract("ERC165", async (accounts) => {
         }
     });
 
-    it("Identity supports ERC165, ERC725, ERC735", async () => {
+    it("Identity supports ERC165, ERC734, ERC735", async () => {
         for (let [sig, expected] of input) {
             let result = await identity.supportsInterface(sig);
             assert.equal(expected, result);

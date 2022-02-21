@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
 
-pragma experimental ABIEncoderV2;
-
 import "./Destructible.sol";
 import "./ERC735.sol";
 import "./KeyGetters.sol";
@@ -12,7 +10,7 @@ import "./ClaimManager.sol";
 
 /// @title Identity
 /// @author Mircea Pasoi
-/// @notice Identity contract implementing both ERC 725 and ERC 735
+/// @notice Identity contract implementing both ERC 734 and ERC 735
 
 contract Identity is Destructible, KeyGetters, KeyManager, ClaimManager, MultiSig {
     /// @dev Constructor for Identity contract. If no initial keys are passed then
@@ -45,8 +43,8 @@ contract Identity is Destructible, KeyGetters, KeyManager, ClaimManager, MultiSi
         _addKeys(_keys, _purposes, _managementRequired, _executionRequired);
         _addClaims(_issuers, _topics, _signatures, _datas, _uris);
 
-        // Supports both ERC 725 & 735
-        supportedInterfaces[ERC725ID() ^ ERC735ID()] = true;
+        // Supports both ERC 734 & 735
+        supportedInterfaces[ERC734ID() ^ ERC735ID()] = true;
     }
 
     // Fallback function accepts Ether transactions

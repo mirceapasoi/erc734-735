@@ -14,7 +14,7 @@ abstract contract ERC735 is ERC165 {
     }
 
     /// @dev ID for ERC165 pseudo-introspection
-    /// @return ID for ERC725 interface
+    /// @return ID for ERC735 interface
     // solhint-disable-next-line func-name-mixedcase
     function ERC735ID() public pure returns (bytes4) {
         return (

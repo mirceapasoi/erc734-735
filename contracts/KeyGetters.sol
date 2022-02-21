@@ -2,11 +2,11 @@
 pragma solidity ^0.8.12;
 
 import "./KeyBase.sol";
-import "./ERC725.sol";
+import "./ERC734.sol";
 
 /// @title KeyGetters
 /// @author Mircea Pasoi
-/// @notice Implement getter functions from ERC725 spec
+/// @notice Implement getter functions from ERC734 spec
 /// @dev Key data is stored using KeyStore library
 
 abstract contract KeyGetters is KeyBase {

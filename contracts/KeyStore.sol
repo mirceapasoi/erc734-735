@@ -3,7 +3,7 @@ pragma solidity ^0.8.12;
 
 /// @title KeyStorage
 /// @author Mircea Pasoi
-/// @notice Library for managing an arrray of ERC 725 keys
+/// @notice Library for managing an arrray of ERC 734 keys
 library KeyStore {
     struct Key {
         uint256[] purposes; //e.g., MANAGEMENT_KEY = 1, EXECUTION_KEY = 2, etc.

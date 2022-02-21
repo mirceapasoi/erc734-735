@@ -2,12 +2,12 @@
 pragma solidity ^0.8.12;
 
 import "./Pausable.sol";
-import "./ERC725.sol";
+import "./ERC734.sol";
 
 /// @title KeyManager
 /// @author Mircea Pasoi
-/// @notice Implement add/remove functions from ERC725 spec
-/// @dev Key data is stored using KeyStore library. Inheriting ERC725 for the events
+/// @notice Implement add/remove functions from ERC734 spec
+/// @dev Key data is stored using KeyStore library. Inheriting ERC734 for the events
 
 abstract contract KeyManager is Pausable {
     /// @dev Add key data to the identity if key + purpose tuple doesn't already exist

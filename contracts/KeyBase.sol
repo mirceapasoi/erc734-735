@@ -2,14 +2,14 @@
 pragma solidity ^0.8.12;
 
 import "./KeyStore.sol";
-import "./ERC725.sol";
+import "./ERC734.sol";
 
 /// @title KeyBase
 /// @author Mircea Pasoi
-/// @notice Abstract contract for ERC725 implementation
+/// @notice Abstract contract for ERC734 implementation
 /// @dev Key data is stored using KeyStore library
 
-abstract contract KeyBase is ERC725 {
+abstract contract KeyBase is ERC734 {
     // For multi-sig
     uint256 public managementRequired = 1;
     uint256 public executionRequired = 1;
@@ -27,7 +27,7 @@ abstract contract KeyBase is ERC725 {
         return allKeys.numKeys;
     }
 
-    /// @dev Convert an Ethereum address (20 bytes) to an ERC725 key (32 bytes)
+    /// @dev Convert an Ethereum address (20 bytes) to an ERC734 key (32 bytes)
     /// @dev It's just a simple typecast, but it's especially useful in tests
     function addrToKey(address addr)
         public

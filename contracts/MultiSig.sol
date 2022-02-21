@@ -2,12 +2,12 @@
 pragma solidity ^0.8.12;
 
 import "./Pausable.sol";
-import "./ERC725.sol";
+import "./ERC734.sol";
 
 /// @title MultiSig
 /// @author Mircea Pasoi
-/// @notice Implement execute and multi-sig functions from ERC725 spec
-/// @dev Key data is stored using KeyStore library. Inheriting ERC725 for the getters
+/// @notice Implement execute and multi-sig functions from ERC734 spec
+/// @dev Key data is stored using KeyStore library. Inheriting ERC734 for the getters
 
 abstract contract MultiSig is Pausable {
     // To prevent replay attacks

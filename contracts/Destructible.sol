@@ -8,7 +8,7 @@ import "./KeyBase.sol";
 /// @notice Base contract that can be destroyed by MANAGEMENT_KEY or the identity itself
 /// @dev Inspired by https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/lifecycle/Destructible.sol
 
-abstract  contract Destructible is KeyBase {
+abstract contract Destructible is KeyBase {
     /// @dev Transfers the current balance and terminates the contract
     /// @param _recipient All funds in contract will be sent to this recipient
     function destroyAndSend(address payable _recipient)

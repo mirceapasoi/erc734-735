@@ -3,14 +3,14 @@ pragma solidity ^0.8.12;
 
 import "../node_modules/openzeppelin-solidity/contracts/utils/cryptography/ECDSA.sol";
 import "./Pausable.sol";
-import "./ERC725.sol";
+import "./ERC734.sol";
 import "./ERC735.sol";
 import "./ERC165Query.sol";
 
 /// @title ClaimManager
 /// @author Mircea Pasoi
 /// @notice Implement functions from ERC735 spec
-/// @dev  Key data is stored using KeyStore library. Inheriting ERC725 for the getters
+/// @dev  Key data is stored using KeyStore library. Inheriting ERC734 for the getters
 
 abstract contract ClaimManager is Pausable, ERC735 {
     using ECDSA for bytes32;
@@ -269,11 +269,11 @@ abstract contract ClaimManager is Pausable, ERC735 {
             if (issuer == address(this)) {
                 return KeyStore.find(allKeys, addrToKey(signedBy), CLAIM_SIGNER_KEY);
             } else {
-                if (issuer.doesContractImplementInterface(ERC725ID())) {
+                if (issuer.doesContractImplementInterface(ERC734ID())) {
                     // Issuer is an Identity contract
                     // It should hold the key with which the above message was signed.
                     // If the key is not present anymore, the claim SHOULD be treated as invalid.
-                    return ERC725(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
+                    return ERC734(issuer).keyHasPurpose(addrToKey(signedBy), CLAIM_SIGNER_KEY);
                 }
             }
             // Invalid
@@ -299,9 +299,9 @@ abstract contract ClaimManager is Pausable, ERC735 {
         if (msg.sender == issuer) {
             // MUST only be done by the issuer of the claim
         } else
-        if (issuer.doesContractImplementInterface(ERC725ID())) {
+        if (issuer.doesContractImplementInterface(ERC734ID())) {
             // Issuer is another Identity contract, is this an execution key?
-            require(ERC725(issuer).keyHasPurpose(addrToKey(msg.sender), EXECUTION_KEY), "issuer contract missing execution key");
+            require(ERC734(issuer).keyHasPurpose(addrToKey(msg.sender), EXECUTION_KEY), "issuer contract missing execution key");
         } else {
             // Invalid! Sender is NOT Management or Self or Issuer
             require(false, "only management or self or issuer");
