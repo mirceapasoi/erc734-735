@@ -30,7 +30,7 @@ The implementation tries to make extensive use of Solidity patterns for modular 
                     |        |                |
                +----v-----+ +v---------+ +----v-----+
                |          | |          | |          |
- +-------------+ ERC 735* | | ERC 734]| KeyBase* |
+ +-------------+ ERC 735* | | ERC 734* | | KeyBase* |
  |             |          | |          | |          |
  |             +----------+ ++-+----+--+ +--+-------+------+--------------+
  |                           | |    |       |              |              |
@@ -54,7 +54,7 @@ The implementation tries to make extensive use of Solidity patterns for modular 
     |            |        +---------v------------------v---+          |
     |            |        |                                <----------+
     |            +-------->            Identity            |
-    |                     |        (ERC 734]35)         |
+    |                     |          (ERC 734+735)         |
     +--------------------->                                |
                           +--------------------------------+
 
@@ -84,9 +84,9 @@ Currently missing unit tests for events being emitted.
 
 1. `uri` is not included in the signature and could theoretically be changed without changing a claim signature. Is this intentional or not?
 1. Claim IDs are generated using `keccak256(address issuer + uint256 _topic)`, which doesn't work great for self-claims i.e. `issuer` is `address(this)` and we might want multiple self-claims with the same `topic`
-1. Added an `ExecutionFailed` event in `ERC734]ich isn't part of the standard
+1. Added an `ExecutionFailed` event in `ERC734` which isn't part of the standard
 1. For execution requests, I'm using the multi-sig threshold at the time of request, not the one at the time of execution - is that a good idea? (e.g. you request an execution, threshold is `X`, wait for approvals, threshold is increased to `Y`, initial execution is approval with `X` approvals)
-1. Using [ERC 165](https://github.com/ethereum/EIPs/pull/881) pseudo-introspection to check if an address implements ERC 734]735. Is this the best pattern for that?
+1. Using [ERC 165](https://github.com/ethereum/EIPs/pull/881) pseudo-introspection to check if an address implements ERC 734 or 735. Is this the best pattern for that?
 1. Added a `PROFILE_TOPIC` claim topic which isn't part of the standard. The intended use is to store a plain-text profile URL in `data` (social media, blogs, etc.). As a convention, `uri` should be equal to `data`.
 1. Added a `LABEL_TOPIC` claim topic which isn't part of the standard. The intended use is to store a plain-text label in `data` (real name, business name, nick name, brand name, alias, etc.).
 1. The "proxy contract" only supports `.call`, doesn't support `.delegateacall` or creating a new contract on behalf of the identity.

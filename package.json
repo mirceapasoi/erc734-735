@@ -1,28 +1,28 @@
 {
-  "name": "erc725-735",
-  "version": "0.2.0",
-  "dependencies": {
-    "babel-polyfill": "^6.26.0",
-    "chai-bn": "^0.3.1",
-    "ganache-cli": "^6.12.2",
-    "npm-check-updates": "^12.4.0",
-    "openzeppelin-solidity": "^4.5.0",
-    "solc": "^0.8.12",
-    "truffle": "^5.5.0",
-    "web3": "^1.7.0"
-  },
-  "scripts": {
-    "test": "truffle test",
-    "lint-contracts": "solhint contracts/**/*.sol"
-  },
-  "devDependencies": {
-    "@babel/preset-env": "^7.16.11",
-    "babel-preset-env": "^1.7.0",
-    "babel-register": "^6.26.0",
-    "chai": "^4.3.6",
-    "eth-gas-reporter": "^0.2.24",
-    "openzeppelin-test-helpers": "^0.5.1",
-    "rlp": "^3.0.0",
-    "solhint": "^3.3.7"
-  }
+    "name": "erc734-735",
+    "version": "0.2.0",
+    "dependencies": {
+        "babel-polyfill": "^6.26.0",
+        "chai-bn": "^0.3.1",
+        "ganache-cli": "^6.12.2",
+        "npm-check-updates": "^12.4.0",
+        "openzeppelin-solidity": "^4.5.0",
+        "solc": "^0.8.12",
+        "truffle": "^5.5.0",
+        "web3": "^1.7.0"
+    },
+    "scripts": {
+        "test": "truffle test",
+        "lint-contracts": "solhint contracts/**/*.sol"
+    },
+    "devDependencies": {
+        "@babel/preset-env": "^7.16.11",
+        "babel-preset-env": "^1.7.0",
+        "babel-register": "^6.26.0",
+        "chai": "^4.3.6",
+        "eth-gas-reporter": "^0.2.24",
+        "openzeppelin-test-helpers": "^0.5.1",
+        "rlp": "^3.0.0",
+        "solhint": "^3.3.7"
+    }
 }
