@@ -1,4 +1,4 @@
-# ERC 734]35
+# ERC 734+735
 
 This is an attempt at an implementation of [ERC 734](https://github.com/ethereum/EIPs/issues/734) and [ERC 735](https://github.com/ethereum/EIPs/issues/735), following the specs as closely as possible. It uses the [Truffle framework](http://truffleframework.com/) and [Ganache CLI](https://github.com/trufflesuite/ganache-cli) for testing.
 
