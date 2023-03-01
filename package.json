@@ -8,7 +8,7 @@
         "npm-check-updates": "^12.4.0",
         "openzeppelin-solidity": "^4.5.0",
         "solc": "^0.8.12",
-        "truffle": "^5.5.0",
+        "truffle": "^5.7.8",
         "web3": "^1.7.0"
     },
     "scripts": {
